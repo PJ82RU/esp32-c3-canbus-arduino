@@ -69,7 +69,7 @@ bool can::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed)
 
 bool can::send(can_frame& frame, int timeout)
 {
-    if (!_init && !frame.is()) return false;
+    if (!_init || !frame.is()) return false;
 
     twai_message_t message = frame.get();
     return twai_transmit(&message, pdMS_TO_TICKS(timeout)) == ESP_OK;

@@ -68,7 +68,7 @@ namespace hardware {
 
         /**
          * Чтение значения word
-         * @param index Индекс значения word
+         * @param index Позиция в массиве байт
          * @return Значение
          */
         uint16_t getWord(int index);

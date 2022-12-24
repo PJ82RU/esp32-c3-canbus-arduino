@@ -3,7 +3,7 @@
 
 #include "can_frame.h"
 
-namespace Hardware {
+namespace hardware {
 
     typedef enum e_can_speed {
         CAN_SPEED_25KBIT,
@@ -31,16 +31,18 @@ namespace Hardware {
         /**
          * Отправить кадр данных
          * @param frame Кадр данных
+         * @param timeout Время ожидания отправки данных, мс
          * @return Результат выполнения
          */
-        static bool send(can_frame& frame);
+        static bool send(can_frame& frame, int timeout = 1000);
 
         /**
          * Получить кадр данных
          * @param frame Кадр данных
+         * @param timeout Время ожидания входящих данных, мс
          * @return Количество полученных байт
          */
-        static int receive(can_frame& frame);
+        static int receive(can_frame& frame, int timeout = 5);
 
     private:
         static volatile bool _init;

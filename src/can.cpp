@@ -1,6 +1,7 @@
 #include "can.h"
 
-using namespace Hardware;
+using namespace hardware;
+volatile bool can::_init = false;
 
 bool can::driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed)
 {
@@ -66,18 +67,18 @@ bool can::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed)
     return driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
 }
 
-bool can::send(can_frame& frame)
+bool can::send(can_frame& frame, int timeout)
 {
     if (!_init && !frame.is()) return false;
 
     twai_message_t message = frame.get();
-    return twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK;
+    return twai_transmit(&message, pdMS_TO_TICKS(timeout)) == ESP_OK;
 }
 
-int can::receive(can_frame& frame)
+int can::receive(can_frame& frame, int timeout)
 {
     if (!_init) return 0;
 
     twai_message_t message;
-    return twai_receive(&message, pdMS_TO_TICKS(10000)) == ESP_OK ? frame.set(message) : 0;
+    return twai_receive(&message, pdMS_TO_TICKS(timeout)) == ESP_OK ? frame.set(message) : 0;
 }

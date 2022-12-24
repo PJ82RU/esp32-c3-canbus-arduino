@@ -1,6 +1,6 @@
 #include "can_frame.h"
 
-using namespace Hardware;
+using namespace hardware;
 
 can_frame::can_frame()
 {
@@ -46,4 +46,8 @@ twai_message_t can_frame::get()
 bool can_frame::is()
 {
     return id > 0x00 && length > 0 && rtr == 0;
+}
+
+uint16_t can_frame::getWord(int index) {
+    return index + 1 < length ? word(data.bytes[index], data.bytes[index + 1]) : 0;
 }

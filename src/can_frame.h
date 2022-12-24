@@ -4,10 +4,10 @@
 #include "Arduino.h"
 #include "driver/twai.h"
 
-namespace Hardware {
+namespace hardware {
 
 #pragma pack(push,1)
-    typedef union {
+    typedef union bits_u {
         struct {
             bool bit1 : 1;
             bool bit2 : 1;
@@ -21,7 +21,7 @@ namespace Hardware {
         uint8_t byte;
     } bits_t;
 
-    typedef union {
+    typedef union bytes_u {
         uint64_t uint64;
         uint32_t uint32[2];
         uint16_t uint16[4];
@@ -63,7 +63,15 @@ namespace Hardware {
          */
         twai_message_t get();
 
+        /** Наличие данных */
         bool is();
+
+        /**
+         * Чтение значения word
+         * @param index Индекс значения word
+         * @return Значение
+         */
+        uint16_t getWord(int index);
     };
 }
 

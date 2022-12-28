@@ -65,6 +65,8 @@ bytes_t can_frame::get_bytes(int index[], size_t size) {
 }
 
 String can_frame::to_string() {
+    if (length == 0) return "";
+
     uint8_t ids[2] = { (uint8_t) (id >> 8), (uint8_t) (id & 0xFF) };
     return "0x" + tools::bytes2hex(ids, 2) + " 0x" + tools::bytes2hex(data.bytes, length);
 }

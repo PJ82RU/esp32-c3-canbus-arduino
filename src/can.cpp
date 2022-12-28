@@ -71,6 +71,12 @@ bool can::send(can_frame& frame, int timeout)
 {
     if (!_init || !frame.is()) return false;
 
+    if (frame.freq > 0) {
+        unsigned long ms = millis();
+        if (frame.ms_next > ms) return false;
+        frame.ms_next = ms + frame.freq;
+    }
+
     twai_message_t message = frame.get();
     return twai_transmit(&message, pdMS_TO_TICKS(timeout)) == ESP_OK;
 }

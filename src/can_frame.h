@@ -31,7 +31,7 @@ namespace hardware {
     };
     // ---
 
-    typedef union bytes_u {
+    typedef union u_bytes {
         uint64_t uint64;
         uint32_t uint32[2];
         uint16_t uint16[4];

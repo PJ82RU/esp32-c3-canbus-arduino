@@ -104,7 +104,7 @@ namespace hardware {
         bool compare(can_frame& frame);
 
         /**
-         * Конвертирование массива бит в bytes_t
+         * Чтение бит в произвольном порядке
          * @param index Массив индексов бит
          * @param size  Размер массива индексов бит
          * @return bytes_t

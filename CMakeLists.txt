@@ -30,4 +30,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/can.cpp src/can.h src/can_frame.cpp src/can_frame.h)
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} src/can.cpp src/can.h src/can_frame.cpp src/can_frame.h src/tools.cpp src/tools.cpp src/tools.h)

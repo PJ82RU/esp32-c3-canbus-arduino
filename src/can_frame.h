@@ -6,20 +6,30 @@
 
 namespace hardware {
 
-#pragma pack(push,1)
-    typedef union bits_u {
-        struct {
-            bool bit1 : 1;
-            bool bit2 : 1;
-            bool bit3 : 1;
-            bool bit4 : 1;
-            bool bit5 : 1;
-            bool bit6 : 1;
-            bool bit7 : 1;
-            bool bit8 : 1;
-        } value;
-        uint8_t byte;
-    } bits_t;
+    // --- Заимствовано у Collin Kidder
+    class bit_ref {
+    public:
+        bit_ref& operator = ( bool x ) {
+            *_ref = (*_ref & ~(1 << _pos));
+            if (x) *_ref = *_ref | (1 << _pos);
+            return *this;
+        }
+
+        explicit operator bool() const {
+            if (*_ref & (1 << _pos)) return true;
+            return false;
+        }
+
+        bit_ref(uint8_t *ref, int pos) {
+            _ref = ref;
+            _pos = pos;
+        }
+
+    private:
+        uint8_t *_ref;
+        int _pos;
+    };
+    // ---
 
     typedef union bytes_u {
         uint64_t uint64;
@@ -32,9 +42,22 @@ namespace hardware {
         int8_t  int8[8];
 
         uint8_t bytes[8];
-        bits_t bits[8];
+        // --- Заимствовано у Collin Kidder
+        struct {
+            uint8_t field[8];
+            bool operator[](int pos) const {
+                if (pos < 0 || pos > 63) return false;
+                return (field[pos / 8] >> pos) & 1;
+            }
+
+            bit_ref operator[](int pos) {
+                if (pos < 0 || pos > 63) return {(uint8_t*)&field[0], 0};
+                auto *ptr = (uint8_t*)&field[0];
+                return {ptr + (pos / 8), pos & 7};
+            }
+        } bit;
+        // ---
     } bytes_t;
-#pragma pack(pop)
 
     class can_frame {
     public:
@@ -64,14 +87,35 @@ namespace hardware {
         twai_message_t get();
 
         /** Наличие данных */
-        bool is();
+        bool is() const;
 
         /**
          * Чтение значения word
          * @param index Позиция в массиве байт
          * @return Значение
          */
-        uint16_t getWord(int index);
+        uint16_t get_word(int index);
+
+        /**
+         * Сравнить кадр CAN
+         * @param frame Кадр CAN
+         * @return Результат выполнения
+         */
+        bool compare(can_frame& frame);
+
+        /**
+         * Конвертирование массива бит в bytes_t
+         * @param index Массив индексов бит
+         * @param size  Размер массива индексов бит
+         * @return bytes_t
+         */
+        bytes_t get_bytes(int index[], size_t size);
+
+        /**
+         * Строковое представление данных
+         * @return String
+         */
+        String to_string();
     };
 }
 

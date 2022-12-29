@@ -9,7 +9,7 @@ namespace hardware {
     // --- Заимствовано у Collin Kidder
     class bit_ref {
     public:
-        bit_ref& operator = ( bool x ) {
+        bit_ref& operator = (bool x) {
             *_ref = (*_ref & ~(1 << _pos));
             if (x) *_ref = *_ref | (1 << _pos);
             return *this;

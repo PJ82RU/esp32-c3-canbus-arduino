@@ -15,7 +15,7 @@ namespace hardware {
             return *this;
         }
 
-        explicit operator bool() const {
+        operator bool() const {
             if (*_ref & (1 << _pos)) return true;
             return false;
         }

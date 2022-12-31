@@ -85,7 +85,10 @@ bool can::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed)
 
 bool can::send(can_frame& frame, int timeout)
 {
-    if (!_init || !frame.is()) return false;
+    if (!_init || !frame.is()) {
+        ESP_LOGW(TAG, "Canbus not initialized or missing data");
+        return false;
+    }
 
     if (frame.freq > 0) {
         unsigned long ms = millis();
@@ -106,7 +109,10 @@ bool can::send(can_frame& frame, int timeout)
 
 int can::receive(can_frame& frame, int timeout)
 {
-    if (!_init) return 0;
+    if (!_init) {
+        ESP_LOGW(TAG, "Canbus not initialized");
+        return 0;
+    }
 
     twai_message_t message;
     esp_err_t err = twai_receive(&message, pdMS_TO_TICKS(timeout));

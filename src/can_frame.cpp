@@ -19,7 +19,7 @@ void can_frame::clear() {
 }
 
 int can_frame::set(twai_message_t message) {
-    ESP_LOGI(TAG, "Set message: id: %04x, bytes: %d, data: %s", message.identifier, message.data_length_code, message.data);
+    ESP_LOGI(TAG, "Set message: id:%04x, bytes:%d, data:%s", message.identifier, message.data_length_code, message.data);
     ESP_LOG_BUFFER_HEXDUMP(TAG, &message, length, ESP_LOG_DEBUG);
 
     id = message.identifier;
@@ -42,7 +42,7 @@ twai_message_t can_frame::get() {
     message.self = self;
     message.extd = extended;
 
-    ESP_LOGI(TAG, "Set message: id: %04x, bytes: %d, data: %s", message.identifier, message.data_length_code, message.data);
+    ESP_LOGI(TAG, "Set message: id:%04x, bytes:%d, data:%s", message.identifier, message.data_length_code, message.data);
     ESP_LOG_BUFFER_HEXDUMP(TAG, &message, length, ESP_LOG_DEBUG);
     return message;
 }

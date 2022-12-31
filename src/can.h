@@ -45,6 +45,7 @@ namespace hardware {
         static int receive(can_frame& frame, int timeout = 5);
 
     private:
+        static const char* TAG;
         static volatile bool _init;
 
         /**

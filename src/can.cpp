@@ -2,6 +2,7 @@
 
 using namespace hardware;
 volatile bool can::_init = false;
+const char* can::TAG = "can";
 
 bool can::driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed)
 {
@@ -14,38 +15,51 @@ bool can::driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mod
 
         case CAN_SPEED_25KBIT:
             t_config = TWAI_TIMING_CONFIG_25KBITS();
+            ESP_LOGI(TAG, "Canbus rate 25KBit");
             break;
         case CAN_SPEED_50KBIT:
             t_config = TWAI_TIMING_CONFIG_50KBITS();
+            ESP_LOGI(TAG, "Canbus rate 50KBit");
             break;
         case CAN_SPEED_100KBIT:
             t_config = TWAI_TIMING_CONFIG_100KBITS();
+            ESP_LOGI(TAG, "Canbus rate 100KBit");
             break;
         case CAN_SPEED_125KBIT:
             t_config = TWAI_TIMING_CONFIG_125KBITS();
+            ESP_LOGI(TAG, "Canbus rate 125KBit");
             break;
         case CAN_SPEED_250KBIT:
             t_config = TWAI_TIMING_CONFIG_250KBITS();
+            ESP_LOGI(TAG, "Canbus rate 250KBit");
             break;
         case CAN_SPEED_500KBIT:
             t_config = TWAI_TIMING_CONFIG_500KBITS();
+            ESP_LOGI(TAG, "Canbus rate 500KBit");
             break;
         case CAN_SPEED_800KBIT:
             t_config = TWAI_TIMING_CONFIG_800KBITS();
+            ESP_LOGI(TAG, "Canbus rate 800KBit");
             break;
         default:
             t_config = TWAI_TIMING_CONFIG_1MBITS();
+            ESP_LOGI(TAG, "Canbus rate 1MBit");
             break;
     }
 
     if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
+        ESP_LOGI(TAG, "TWAI driver installed, mode %d", mode);
         delay(100);
 
         if (twai_start() == ESP_OK) {
+            ESP_LOGI(TAG, "TWAI driver started");
             delay(100);
             _init = true;
-        } else twai_driver_uninstall();
-    }
+        } else {
+            ESP_LOGW(TAG, "Failed to start TWAI driver");
+            twai_driver_uninstall();
+        }
+    } else ESP_LOGW(TAG, "Failed to install TWAI driver");
 
     return _init;
 }
@@ -58,12 +72,14 @@ void can::driver_uninstall()
         twai_stop();
         delay(50);
         twai_driver_uninstall();
+        ESP_LOGI(TAG, "TWAI driver uninstalled");
         delay(50);
     }
 }
 
 bool can::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed)
 {
+    ESP_LOGI(TAG, "Canbus begin");
     return driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
 }
 
@@ -78,7 +94,14 @@ bool can::send(can_frame& frame, int timeout)
     }
 
     twai_message_t message = frame.get();
-    return twai_transmit(&message, pdMS_TO_TICKS(timeout)) == ESP_OK;
+    esp_err_t err = twai_transmit(&message, pdMS_TO_TICKS(timeout));
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "Message sent successfully");
+        return true;
+    }
+
+    ESP_LOGW(TAG, "Failed to send message, ret:%02x", err);
+    return false;
 }
 
 int can::receive(can_frame& frame, int timeout)
@@ -86,5 +109,10 @@ int can::receive(can_frame& frame, int timeout)
     if (!_init) return 0;
 
     twai_message_t message;
-    return twai_receive(&message, pdMS_TO_TICKS(timeout)) == ESP_OK ? frame.set(message) : 0;
+    esp_err_t err = twai_receive(&message, pdMS_TO_TICKS(timeout));
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "Message receive successfully");
+        return frame.set(message);
+    }
+    return 0;
 }

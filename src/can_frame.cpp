@@ -1,10 +1,10 @@
 #include "can_frame.h"
 #include "tools.h"
-
+#include "esp32-hal-log.h"
 using namespace hardware;
 
 can_frame::can_frame() {
-    ESP_LOGI(TAG, "Frame created");
+    log_i("Frame created");
     clear();
 }
 
@@ -15,12 +15,11 @@ void can_frame::clear() {
     rtr = 0;
     self = 0;
     memset(&data, 0, sizeof(data));
-    ESP_LOGI(TAG, "Frame cleared");
+    log_d("Frame cleared");
 }
 
 int can_frame::set(twai_message_t message) {
-    ESP_LOGI(TAG, "Set message: id:%04x, bytes:%d, data:%s", message.identifier, message.data_length_code, message.data);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, &message, length, ESP_LOG_DEBUG);
+    log_d("Set message: id: %04x, bytes: %d, data: %s", message.identifier, message.data_length_code, message.data);
 
     id = message.identifier;
     length = message.data_length_code;
@@ -42,8 +41,7 @@ twai_message_t can_frame::get() {
     message.self = self;
     message.extd = extended;
 
-    ESP_LOGI(TAG, "Set message: id:%04x, bytes:%d, data:%s", message.identifier, message.data_length_code, message.data);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, &message, length, ESP_LOG_DEBUG);
+    log_d("Set message: id: %04x, bytes: %d, data: %s", message.identifier, message.data_length_code, message.data);
     return message;
 }
 
@@ -54,10 +52,10 @@ bool can_frame::is() const {
 uint16_t can_frame::get_word(int index) {
     if (index >= 0 && index + 1 < length) {
         uint16_t result = word(data.bytes[index], data.bytes[index + 1]);
-        ESP_LOGI(TAG, "Get word: %d", result);
+        log_d("Get word: %d", result);
         return result;
     }
-    ESP_LOGW(TAG, "Get word: index is outside");
+    log_w("Get word: index is outside");
     return 0;
 }
 
@@ -69,7 +67,7 @@ bool can_frame::compare(can_frame& frame) {
             if (!result) break;
         }
     }
-    ESP_LOGI(TAG, "Compare: %s", result ? "true" : "false");
+    log_d("Compare: %s", result ? "true" : "false");
     return result;
 }
 
@@ -80,7 +78,6 @@ bytes_t can_frame::get_bytes(const int index[], size_t size) {
         idx = index[i];
         result.bit[i] = idx >= 0 && idx < 64 && data.bit[idx];
     }
-    ESP_LOGI(TAG, "Get bytes: %s", result.bytes);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, result.bytes, 8, ESP_LOG_DEBUG);
+    log_d("Get bytes: %s", result.bytes);
     return result;
 }

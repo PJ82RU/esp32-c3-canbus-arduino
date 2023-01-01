@@ -45,7 +45,6 @@ namespace hardware {
         static int receive(can_frame& frame, int timeout = 5);
 
     private:
-        static const char* TAG;
         static volatile bool _init;
 
         /**
@@ -56,10 +55,10 @@ namespace hardware {
          * @param speed Скорость can-шины
          * @return Результат выполнения
          */
-        static bool driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed);
+        static bool _driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed);
 
         /** Удаление драйвера */
-        static void driver_uninstall();
+        static void _driver_uninstall();
     };
 }
 

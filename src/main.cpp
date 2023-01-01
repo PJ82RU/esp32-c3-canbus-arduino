@@ -24,28 +24,19 @@ void loop() {
     if (can::receive(frame) > 0)
     {
         // получаем данные из CAN-шины
-        Serial.print(frame.id, HEX);
-        for (uint8_t byte : frame.data.bytes) {
-            Serial.print(" 0x");
-            Serial.print(byte, HEX);
-        }
-        Serial.println();
     }
 
     // отправляем данные в CAN-шину
-    Serial.print("Sending messages 0x290 - ");
     frame.id = 0x290;
     frame.length = 8;
     memcpy(frame.data.bytes, CAN290_DATA, frame.length);
     can::send(frame);
 
-    Serial.print("Sending messages 0x291 - ");
     frame.id = 0x291;
     frame.length = 8;
     memcpy(frame.data.bytes, CAN291_DATA, frame.length);
     can::send(frame);
 
-    Serial.print("Sending messages 0x28f - ");
     frame.id = 0x28f;
     frame.length = 8;
     memcpy(frame.data.bytes, CAN28F_DATA, frame.length);

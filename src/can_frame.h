@@ -113,9 +113,6 @@ namespace hardware {
          * @return bytes_t
          */
         bytes_t get_bytes(const int index[], size_t size);
-
-    private:
-        const char* TAG = "can_frame";
     };
 }
 

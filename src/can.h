@@ -26,7 +26,7 @@ namespace hardware {
          * @param speed Скорость can-шины
          * @return Результат выполнения
          */
-        static bool begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed);
+        bool begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed);
 
         /**
          * Отправить кадр данных
@@ -34,7 +34,7 @@ namespace hardware {
          * @param timeout Время ожидания отправки данных, мс
          * @return Результат выполнения
          */
-        static bool send(can_frame& frame, int timeout = 1000);
+        bool send(can_frame& frame, int timeout = 1000);
 
         /**
          * Получить кадр данных
@@ -42,10 +42,10 @@ namespace hardware {
          * @param timeout Время ожидания входящих данных, мс
          * @return Количество полученных байт
          */
-        static int receive(can_frame& frame, int timeout = 5);
+        int receive(can_frame& frame, int timeout = 5);
 
     private:
-        static volatile bool _init;
+        bool _init = false;
 
         /**
          * Установка/переустановка драйвера
@@ -55,12 +55,13 @@ namespace hardware {
          * @param speed Скорость can-шины
          * @return Результат выполнения
          */
-        static bool _driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed);
+        bool _driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed);
 
         /** Удаление драйвера */
-        static void _driver_uninstall();
+        void _driver_uninstall();
     };
 }
 
+extern hardware::can cand;
 
 #endif //ESP32_C3_CANBUS_ARDUINO_CAN_H

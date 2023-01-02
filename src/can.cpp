@@ -1,7 +1,6 @@
 #include "can.h"
 #include "esp32-hal-log.h"
 using namespace hardware;
-volatile bool can::_init = false;
 
 bool can::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed)
 {
@@ -121,3 +120,5 @@ int can::receive(can_frame& frame, int timeout)
     }
     return 0;
 }
+
+can cand;

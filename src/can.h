@@ -17,7 +17,7 @@ namespace hardware {
         CAN_SPEED_MAX
     } e_can_speed_t;
 
-    class can {
+    class can_c {
     public:
         /**
          * Инициализация
@@ -62,6 +62,6 @@ namespace hardware {
     };
 }
 
-extern hardware::can cand;
+extern hardware::can_c can;
 
 #endif //ESP32_C3_CANBUS_ARDUINO_CAN_H

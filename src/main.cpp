@@ -5,9 +5,9 @@ using namespace hardware;
 
 void setup() {
     Serial.begin(115200);
-    delay(10);
+    delay(1000);
 
-    if (cand.begin(GPIO_NUM_5, GPIO_NUM_4, e_can_speed::CAN_SPEED_125KBIT)) {
+    if (can.begin(GPIO_NUM_5, GPIO_NUM_4, e_can_speed::CAN_SPEED_125KBIT)) {
         Serial.println("CANBUS initialized");
     } else {
         Serial.println("CANBUS not initialized");
@@ -21,7 +21,7 @@ const uint8_t CAN28F_DATA[8] = { 0x80, 0x00, 0x00, 0x00, 0xA0, 0x00, 0x00, 0x03 
 void loop() {
     can_frame frame;
 
-    if (cand.receive(frame) > 0)
+    if (can.receive(frame) > 0)
     {
         // получаем данные из CAN-шины
     }
@@ -30,17 +30,17 @@ void loop() {
     frame.id = 0x290;
     frame.length = 8;
     memcpy(frame.data.bytes, CAN290_DATA, frame.length);
-    cand.send(frame);
+    can.send(frame);
 
     frame.id = 0x291;
     frame.length = 8;
     memcpy(frame.data.bytes, CAN291_DATA, frame.length);
-    cand.send(frame);
+    can.send(frame);
 
     frame.id = 0x28f;
     frame.length = 8;
     memcpy(frame.data.bytes, CAN28F_DATA, frame.length);
-    cand.send(frame);
+    can.send(frame);
 
     delay(250);
 }

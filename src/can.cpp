@@ -2,7 +2,7 @@
 #include "esp32-hal-log.h"
 using namespace hardware;
 
-bool can::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed)
+bool can_c::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed)
 {
     if (_init) _driver_uninstall();
 
@@ -62,7 +62,7 @@ bool can::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mo
     return _init;
 }
 
-void can::_driver_uninstall()
+void can_c::_driver_uninstall()
 {
     if (_init) {
         _init = false;
@@ -75,13 +75,13 @@ void can::_driver_uninstall()
     }
 }
 
-bool can::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed)
+bool can_c::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed)
 {
     log_i("Canbus begin");
     return _driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
 }
 
-bool can::send(can_frame& frame, int timeout)
+bool can_c::send(can_frame& frame, int timeout)
 {
     if (!_init || !frame.is()) {
         log_w("Canbus not initialized or missing data");
@@ -105,7 +105,7 @@ bool can::send(can_frame& frame, int timeout)
     return false;
 }
 
-int can::receive(can_frame& frame, int timeout)
+int can_c::receive(can_frame& frame, int timeout)
 {
     if (!_init) {
         log_w("Canbus not initialized");
@@ -121,4 +121,4 @@ int can::receive(can_frame& frame, int timeout)
     return 0;
 }
 
-can cand;
+can_c can;

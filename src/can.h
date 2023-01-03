@@ -34,7 +34,7 @@ namespace hardware {
          * @param timeout Время ожидания отправки данных, мс
          * @return Результат выполнения
          */
-        bool send(can_frame& frame, int timeout = 1000);
+        bool send(can_frame &frame, int timeout = 1000);
 
         /**
          * Получить кадр данных
@@ -42,7 +42,7 @@ namespace hardware {
          * @param timeout Время ожидания входящих данных, мс
          * @return Количество полученных байт
          */
-        int receive(can_frame& frame, int timeout = 5);
+        int receive(can_frame &frame, int timeout = 5);
 
     private:
         bool _init = false;

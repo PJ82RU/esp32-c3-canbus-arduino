@@ -12,7 +12,7 @@ String tools::bytes2hex(uint8_t bytes[], size_t size) {
     return res;
 }
 
-bool tools::hex2bytes(String& hex, uint8_t bytes[], size_t size) {
+bool tools::hex2bytes(String &hex, uint8_t bytes[], size_t size) {
     size_t hexlen = hex.length();
     if (!bytes || size == 0 || hexlen == 0 || hexlen % 2 != 0) return false;
 
@@ -23,7 +23,7 @@ bool tools::hex2bytes(String& hex, uint8_t bytes[], size_t size) {
     return true;
 }
 
-bool tools::compare(const uint8_t* buf1, const uint8_t* buf2, size_t size) {
+bool tools::compare(const uint8_t *buf1, const uint8_t *buf2, size_t size) {
     for (int i = 0; i < size; ++i) {
         if (buf1[i] != buf2[i]) return false;
     }

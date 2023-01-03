@@ -20,7 +20,7 @@ public:
      * @param size  Размер массива
      * @return Результат выполнения
      */
-    static bool hex2bytes(String& hex, uint8_t bytes[], size_t size);
+    static bool hex2bytes(String &hex, uint8_t bytes[], size_t size);
 
     /**
      * Сравнить два массива данных
@@ -29,7 +29,7 @@ public:
      * @param size Размер буфера
      * @return Результат сравнения
      */
-    static bool compare(const uint8_t* buf1, const uint8_t* buf2, size_t size);
+    static bool compare(const uint8_t *buf1, const uint8_t *buf2, size_t size);
 
     /**
      * Читать форматированное время

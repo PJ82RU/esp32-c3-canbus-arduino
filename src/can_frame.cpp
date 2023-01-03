@@ -1,6 +1,7 @@
 #include "can_frame.h"
 #include "tools.h"
 #include "esp32-hal-log.h"
+
 using namespace hardware;
 
 can_frame::can_frame() {
@@ -59,7 +60,7 @@ uint16_t can_frame::get_word(int index) {
     return 0;
 }
 
-bool can_frame::compare(can_frame& frame) {
+bool can_frame::compare(can_frame &frame) {
     bool result = frame.id == id && frame.length == length;
     if (result) {
         for (int i = 0; i < length; i++) {

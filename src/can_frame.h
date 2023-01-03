@@ -9,7 +9,7 @@ namespace hardware {
     // --- Заимствовано у Collin Kidder
     class bit_ref {
     public:
-        bit_ref& operator = (bool x) {
+        bit_ref &operator=(bool x) {
             *_ref = (*_ref & ~(1 << _pos));
             if (x) *_ref = *_ref | (1 << _pos);
             return *this;
@@ -35,24 +35,26 @@ namespace hardware {
         uint64_t uint64;
         uint32_t uint32[2];
         uint16_t uint16[4];
-        uint8_t  uint8[8];
+        uint8_t uint8[8];
         int64_t int64;
         int32_t int32[2];
         int16_t int16[4];
-        int8_t  int8[8];
+        int8_t int8[8];
 
         uint8_t bytes[8];
+
         // --- Заимствовано у Collin Kidder
         struct {
             uint8_t field[8];
+
             bool operator[](int pos) const {
                 if (pos < 0 || pos > 63) return false;
                 return (field[pos / 8] >> pos) & 1;
             }
 
             bit_ref operator[](int pos) {
-                if (pos < 0 || pos > 63) return {(uint8_t*)&field[0], 0};
-                auto *ptr = (uint8_t*)&field[0];
+                if (pos < 0 || pos > 63) return {(uint8_t *) &field[0], 0};
+                auto *ptr = (uint8_t *) &field[0];
                 return {ptr + (pos / 8), pos & 7};
             }
         } bit;
@@ -104,7 +106,7 @@ namespace hardware {
          * @param frame Кадр CAN
          * @return Результат выполнения
          */
-        bool compare(can_frame& frame);
+        bool compare(can_frame &frame);
 
         /**
          * Чтение бит в произвольном порядке

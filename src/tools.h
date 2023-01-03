@@ -30,6 +30,14 @@ public:
      * @return Результат сравнения
      */
     static bool compare(const uint8_t* buf1, const uint8_t* buf2, size_t size);
+
+    /**
+     * Читать форматированное время
+     * @param buffer Буфер (16 символов)
+     * @param time   Время, мс
+     * @param day	 Добавить дни
+     */
+    static void get_time(char buffer[16], unsigned long time, bool day = false);
 };
 
 #endif //ESP32_C3_CANBUS_ARDUINO_TOOLS_H

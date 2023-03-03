@@ -80,15 +80,18 @@ bool can_c::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed) {
     return _driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
 }
 
-bool can_c::send(can_frame &frame, int timeout) {
+int can_c::send(can_frame &frame, int timeout) {
     if (!_init || !frame.is()) {
         log_w("Canbus not initialized or missing data");
-        return false;
+        return -2;
     }
 
     if (frame.freq > 0) {
         unsigned long ms = millis();
-        if (frame.ms_next > ms) return false;
+        if (frame.ms_next > ms) {
+            log_d("Time is not to send data: %d > %d", frame.ms_next, ms);
+            return 1;
+        }
         frame.ms_next = ms + frame.freq;
     }
 
@@ -96,11 +99,11 @@ bool can_c::send(can_frame &frame, int timeout) {
     esp_err_t err = twai_transmit(&message, pdMS_TO_TICKS(timeout));
     if (err == ESP_OK) {
         log_i("Message sent successfully");
-        return true;
+        return 0;
     }
 
     log_w("Failed to send message, ret: %02x", err);
-    return false;
+    return -1;
 }
 
 int can_c::receive(can_frame &frame, int timeout) {

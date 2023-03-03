@@ -70,8 +70,8 @@ namespace hardware {
         uint32_t self{};        // Transmit as a Self Reception Request. Unused for received.
         uint32_t rtr{};         // Message is a Remote Frame
 
-        uint16_t freq = 0;
-        unsigned long ms_next = 0;
+        uint16_t freq = 250;            // значение частоты отправки данных, мс
+        unsigned long ms_next = 0;      // время следующей отправки данных, мс
 
         can_frame();
 

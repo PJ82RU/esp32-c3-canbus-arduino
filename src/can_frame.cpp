@@ -5,7 +5,7 @@
 using namespace hardware;
 
 can_frame::can_frame() {
-    log_i("Frame created");
+    log_d("Frame created");
     clear();
 }
 

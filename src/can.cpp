@@ -98,7 +98,7 @@ int can_c::send(can_frame &frame, int timeout) {
     twai_message_t message = frame.get();
     esp_err_t err = twai_transmit(&message, pdMS_TO_TICKS(timeout));
     if (err == ESP_OK) {
-        log_i("Message sent successfully");
+        log_d("Message sent successfully");
         return 0;
     }
 
@@ -115,7 +115,7 @@ int can_c::receive(can_frame &frame, int timeout) {
     twai_message_t message;
     esp_err_t err = twai_receive(&message, pdMS_TO_TICKS(timeout));
     if (err == ESP_OK) {
-        log_i("Message receive successfully");
+        log_d("Message receive successfully");
         return frame.set(message);
     }
     return 0;

@@ -74,6 +74,7 @@ bool can_frame::compare(can_frame &frame) {
 
 bytes_t can_frame::get_bytes(const int index[], size_t size) {
     bytes_t result;
+    for (uint8_t &i: result.bytes) i = 0;
     int idx;
     for (int i = 0; i < size; i++) {
         idx = index[i];

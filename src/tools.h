@@ -35,9 +35,12 @@ public:
      * Читать форматированное время
      * @param buffer Буфер (16 символов)
      * @param time   Время, мс
-     * @param day	 Добавить дни
+     * @param day	 Показать дни
+     * @param hour	 Показать часы
+     * @param minute Показать минуты
+     * @param second Показать секунды
      */
-    static void get_time(char buffer[16], unsigned long time, bool day = false);
+    static void get_time(char buffer[16], unsigned long time, bool day = false, bool hour = true, bool minute = true, bool second = true);
 };
 
 #endif //ESP32_C3_CANBUS_ARDUINO_TOOLS_H

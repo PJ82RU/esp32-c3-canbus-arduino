@@ -30,17 +30,28 @@ bool tools::compare(const uint8_t *buf1, const uint8_t *buf2, size_t size) {
     return true;
 }
 
-void tools::get_time(char buffer[16], unsigned long time, bool day) {
-    uint8_t countDay, hour, minute, second;
+void tools::get_time(char buffer[16], unsigned long time, bool day, bool hour, bool minute, bool second) {
+    uint8_t countDay, countHour, countMinute, countSecond;
 
     time /= 1000;
-    second = time % 60;
+    countSecond = time % 60;
     time /= 60;
-    minute = time % 60;
+    countMinute = time % 60;
     time /= 60;
-    hour = time % 24;
+    countHour = time % 24;
     countDay = time / 24;
 
-    if (day) sprintf(buffer, "%d.%02d:%02d:%02d", countDay, hour, minute, second);
-    else sprintf(buffer, "%02d:%02d:%02d", hour, minute, second);
+    int pos = 0;
+    if (day) {
+        pos += (hour || minute || second) ? sprintf(&buffer[pos], "%d.", countDay) : sprintf(&buffer[pos], "%d", countDay);
+    }
+    if (hour) {
+        pos += (minute || second) ? sprintf(&buffer[pos], "%02d:", countHour) : sprintf(&buffer[pos], "%02d", countHour);
+    }
+    if (minute) {
+        pos += second ? sprintf(&buffer[pos], "%02d:", countMinute) : sprintf(&buffer[pos], "%02d", countMinute);
+    }
+    if (second) {
+        sprintf(&buffer[pos], "%02d", countSecond);
+    }
 }

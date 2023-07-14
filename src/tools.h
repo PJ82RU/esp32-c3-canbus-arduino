@@ -7,11 +7,12 @@ class tools {
 public:
     /**
      * Конвертировать байты в строку HEX
-     * @param bytes Массив байт
-     * @param size  Размер массива
+     * @param bytes      Массив байт
+     * @param size       Размер массива
+     * @param upper_case Строка HEX в верхнем регистре
      * @return Строка HEX
      */
-    static String bytes2hex(uint8_t bytes[], size_t size);
+    static String bytes2hex(uint8_t bytes[], size_t size, bool upper_case = true);
 
     /**
      * Конвертировать строку HEX в байты

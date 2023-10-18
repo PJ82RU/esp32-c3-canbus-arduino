@@ -3,7 +3,7 @@
 
 using namespace hardware;
 
-bool can_c::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, e_can_speed_t speed) {
+bool can_c::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, can_speed_t speed) {
     if (_init) _driver_uninstall();
 
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, mode);
@@ -11,31 +11,31 @@ bool can_c::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t 
     twai_timing_config_t t_config;
     switch (speed) {
 
-        case CAN_SPEED_25KBIT:
+        case can_speed_t::CAN_SPEED_25KBIT:
             t_config = TWAI_TIMING_CONFIG_25KBITS();
             log_i("Canbus rate 25KBit");
             break;
-        case CAN_SPEED_50KBIT:
+        case can_speed_t::CAN_SPEED_50KBIT:
             t_config = TWAI_TIMING_CONFIG_50KBITS();
             log_i("Canbus rate 50KBit");
             break;
-        case CAN_SPEED_100KBIT:
+        case can_speed_t::CAN_SPEED_100KBIT:
             t_config = TWAI_TIMING_CONFIG_100KBITS();
             log_i("Canbus rate 100KBit");
             break;
-        case CAN_SPEED_125KBIT:
+        case can_speed_t::CAN_SPEED_125KBIT:
             t_config = TWAI_TIMING_CONFIG_125KBITS();
             log_i("Canbus rate 125KBit");
             break;
-        case CAN_SPEED_250KBIT:
+        case can_speed_t::CAN_SPEED_250KBIT:
             t_config = TWAI_TIMING_CONFIG_250KBITS();
             log_i("Canbus rate 250KBit");
             break;
-        case CAN_SPEED_500KBIT:
+        case can_speed_t::CAN_SPEED_500KBIT:
             t_config = TWAI_TIMING_CONFIG_500KBITS();
             log_i("Canbus rate 500KBit");
             break;
-        case CAN_SPEED_800KBIT:
+        case can_speed_t::CAN_SPEED_800KBIT:
             t_config = TWAI_TIMING_CONFIG_800KBITS();
             log_i("Canbus rate 800KBit");
             break;
@@ -75,7 +75,7 @@ void can_c::_driver_uninstall() {
     }
 }
 
-bool can_c::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, e_can_speed_t speed) {
+bool can_c::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed) {
     log_i("Canbus begin");
     return _driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
 }

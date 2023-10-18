@@ -5,7 +5,6 @@
 #include "driver/twai.h"
 
 namespace hardware {
-
     // --- Заимствовано у Collin Kidder
     class bit_ref {
     public:

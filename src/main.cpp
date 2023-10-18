@@ -7,7 +7,7 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
 
-    if (can.begin(GPIO_NUM_5, GPIO_NUM_4, e_can_speed::CAN_SPEED_125KBIT)) {
+    if (can.begin(GPIO_NUM_5, GPIO_NUM_4, can_speed_t::CAN_SPEED_125KBIT)) {
         Serial.println("CANBUS initialized");
     } else {
         Serial.println("CANBUS not initialized");

@@ -5,7 +5,7 @@
 #include "types.h"
 
 namespace hardware {
-    class can_c {
+    class Can {
     public:
         /**
          * Инициализация
@@ -26,7 +26,7 @@ namespace hardware {
          *      -1 - ошибка отправки;
          *      -2 - объект не инициализирован или данные отсутствуют;
          */
-        int send(can_frame &frame, int timeout = 1000);
+        int send(CanFrame &frame, int timeout = 1000);
 
         /**
          * Получить кадр данных
@@ -34,7 +34,7 @@ namespace hardware {
          * @param timeout Время ожидания входящих данных, мс
          * @return Количество полученных байт
          */
-        int receive(can_frame &frame, int timeout = 5);
+        int receive(CanFrame &frame, int timeout = 5);
 
     private:
         bool _init = false;
@@ -53,7 +53,5 @@ namespace hardware {
         void _driver_uninstall();
     };
 }
-
-extern hardware::can_c can;
 
 #endif //ESP32_C3_CANBUS_ARDUINO_CAN_H

@@ -3,6 +3,8 @@
 
 using namespace hardware;
 
+Can can;
+
 void setup() {
     Serial.begin(115200);
     delay(1000);
@@ -22,7 +24,7 @@ const uint8_t CAN28F_DATA[8] = {0x80, 0x00, 0x00, 0x00, 0xA0, 0x00, 0x00,
                                 0x03};        // Параметры и завершающая часть команд 0х290 и 0х291
 
 void loop() {
-    can_frame frame;
+    CanFrame frame;
 
     if (can.receive(frame) > 0) {
         // получаем данные из CAN-шины

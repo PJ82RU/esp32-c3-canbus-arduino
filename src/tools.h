@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-class tools {
+class Tools {
 public:
     /**
      * Конвертировать байты в строку HEX

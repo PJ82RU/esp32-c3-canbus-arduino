@@ -1,6 +1,6 @@
 #include "tools.h"
 
-String tools::bytes2hex(uint8_t bytes[], size_t size, bool upper_case) {
+String Tools::bytes2hex(uint8_t bytes[], size_t size, bool upper_case) {
     String res = "", buf;
     if (size != 0) {
         for (int i = 0; i < size; i++) {
@@ -12,7 +12,7 @@ String tools::bytes2hex(uint8_t bytes[], size_t size, bool upper_case) {
     return res;
 }
 
-bool tools::hex2bytes(String &hex, uint8_t bytes[], size_t size) {
+bool Tools::hex2bytes(String &hex, uint8_t bytes[], size_t size) {
     size_t hexlen = hex.length();
     if (!bytes || size == 0 || hexlen == 0 || hexlen % 2 != 0) return false;
 
@@ -23,14 +23,14 @@ bool tools::hex2bytes(String &hex, uint8_t bytes[], size_t size) {
     return true;
 }
 
-bool tools::compare(const uint8_t *buf1, const uint8_t *buf2, size_t size) {
+bool Tools::compare(const uint8_t *buf1, const uint8_t *buf2, size_t size) {
     for (int i = 0; i < size; ++i) {
         if (buf1[i] != buf2[i]) return false;
     }
     return true;
 }
 
-void tools::get_time(char buffer[16], unsigned long time, bool day, bool hour, bool minute, bool second) {
+void Tools::get_time(char buffer[16], unsigned long time, bool day, bool hour, bool minute, bool second) {
     uint8_t countDay, countHour, countMinute, countSecond;
 
     time /= 1000;

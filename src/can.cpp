@@ -3,7 +3,7 @@
 
 using namespace hardware;
 
-bool can_c::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, can_speed_t speed) {
+bool Can::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, can_speed_t speed) {
     if (_init) _driver_uninstall();
 
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, mode);
@@ -63,7 +63,7 @@ bool can_c::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t 
     return _init;
 }
 
-void can_c::_driver_uninstall() {
+void Can::_driver_uninstall() {
     if (_init) {
         _init = false;
 
@@ -75,12 +75,12 @@ void can_c::_driver_uninstall() {
     }
 }
 
-bool can_c::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed) {
+bool Can::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed) {
     log_i("Canbus begin");
     return _driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
 }
 
-int can_c::send(can_frame &frame, int timeout) {
+int Can::send(CanFrame &frame, int timeout) {
     if (!_init || !frame.is()) {
         log_w("Canbus not initialized or missing data");
         return -2;
@@ -106,7 +106,7 @@ int can_c::send(can_frame &frame, int timeout) {
     return -1;
 }
 
-int can_c::receive(can_frame &frame, int timeout) {
+int Can::receive(CanFrame &frame, int timeout) {
     if (!_init) {
         log_w("Canbus not initialized");
         return 0;
@@ -120,5 +120,3 @@ int can_c::receive(can_frame &frame, int timeout) {
     }
     return 0;
 }
-
-can_c can;

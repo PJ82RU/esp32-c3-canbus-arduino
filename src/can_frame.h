@@ -60,7 +60,7 @@ namespace hardware {
         // ---
     } bytes_t;
 
-    class can_frame {
+    class CanFrame {
     public:
         uint32_t id{};          // 11 or 29 bit identifier
         bytes_t data{};         // Data bytes (not relevant in RTR frame)
@@ -72,7 +72,7 @@ namespace hardware {
         uint16_t freq = 250;            // значение частоты отправки данных, мс
         unsigned long ms_next = 0;      // время следующей отправки данных, мс
 
-        can_frame();
+        CanFrame();
 
         /** Очистить значения */
         void clear();
@@ -105,7 +105,7 @@ namespace hardware {
          * @param frame Кадр CAN
          * @return Результат выполнения
          */
-        bool compare(can_frame &frame);
+        bool compare(CanFrame &frame);
 
         /**
          * Чтение бит в произвольном порядке

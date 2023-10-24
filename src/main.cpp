@@ -9,7 +9,7 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
 
-    if (can.begin(GPIO_NUM_5, GPIO_NUM_4, can_speed_t::CAN_SPEED_125KBIT)) {
+    if (can.start(GPIO_NUM_5, GPIO_NUM_4, can_speed_t::CAN_SPEED_125KBIT)) {
         Serial.println("CANBUS initialized");
     } else {
         Serial.println("CANBUS not initialized");
@@ -45,6 +45,8 @@ void loop() {
     frame.length = 8;
     memcpy(frame.data.bytes, CAN28F_DATA, frame.length);
     can.send(frame);
+
+//    if (millis() > 15000) can.stop();
 
     delay(250);
 }

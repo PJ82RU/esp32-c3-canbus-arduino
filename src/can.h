@@ -8,13 +8,16 @@ namespace hardware {
     class Can {
     public:
         /**
-         * Can-шина
+         * Запуск сервисов can-шины
          * @param gpio_tx Контакт TX
          * @param gpio_rx Контакт RX
          * @param speed Скорость can-шины
          * @return Результат выполнения
          */
-        Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed);
+        bool start(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed);
+
+        /** Остановить сервисы can-шины */
+        void stop();
 
         ~Can();
 

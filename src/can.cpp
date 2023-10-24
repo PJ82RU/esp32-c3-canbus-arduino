@@ -66,18 +66,24 @@ bool Can::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mo
 void Can::_driver_uninstall() {
     if (_init) {
         _init = false;
-
         twai_stop();
         delay(50);
         twai_driver_uninstall();
+
         log_i("TWAI driver uninstalled");
         delay(50);
     }
 }
 
-bool Can::begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed) {
-    log_i("Canbus begin");
-    return _driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
+Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed) {
+    if (_driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed))
+        log_i("Canbus started");
+    else
+        log_e("Failed Canbus start");
+}
+
+Can::~Can() {
+    _driver_uninstall();
 }
 
 int Can::send(CanFrame &frame, int timeout) {

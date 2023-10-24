@@ -8,13 +8,15 @@ namespace hardware {
     class Can {
     public:
         /**
-         * Инициализация
+         * Can-шина
          * @param gpio_tx Контакт TX
          * @param gpio_rx Контакт RX
          * @param speed Скорость can-шины
          * @return Результат выполнения
          */
-        bool begin(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed);
+        Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed);
+
+        ~Can();
 
         /**
          * Отправить кадр данных

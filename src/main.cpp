@@ -24,27 +24,30 @@ const uint8_t CAN28F_DATA[8] = {0x80, 0x00, 0x00, 0x00, 0xA0, 0x00, 0x00,
                                 0x03};        // Параметры и завершающая часть команд 0х290 и 0х291
 
 void loop() {
-    CanFrame frame;
+    CanFrame frame0;
+    CanFrame frame1;
+    CanFrame frame2;
+    CanFrame frame3;
 
-    if (can.receive(frame) > 0) {
+    if (can.receive(frame0) > 0) {
         // получаем данные из CAN-шины
     }
 
     // отправляем данные в CAN-шину
-    frame.id = 0x290;
-    frame.length = 8;
-    memcpy(frame.data.bytes, CAN290_DATA, frame.length);
-    can.send(frame);
+    frame1.id = 0x290;
+    frame1.length = 8;
+    memcpy(frame1.data.bytes, CAN290_DATA, frame1.length);
+    can.send(frame1);
 
-    frame.id = 0x291;
-    frame.length = 8;
-    memcpy(frame.data.bytes, CAN291_DATA, frame.length);
-    can.send(frame);
+    frame2.id = 0x291;
+    frame2.length = 8;
+    memcpy(frame2.data.bytes, CAN291_DATA, frame2.length);
+    can.send(frame2);
 
-    frame.id = 0x28f;
-    frame.length = 8;
-    memcpy(frame.data.bytes, CAN28F_DATA, frame.length);
-    can.send(frame);
+    frame3.id = 0x28f;
+    frame3.length = 8;
+    memcpy(frame3.data.bytes, CAN28F_DATA, frame3.length);
+    can.send(frame3);
 
 //    if (millis() > 15000) can.stop();
 

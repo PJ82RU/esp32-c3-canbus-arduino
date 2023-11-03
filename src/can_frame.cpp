@@ -13,36 +13,10 @@ namespace hardware {
         length = 0;
         extended = 0;
         rtr = 0;
-        self = 0;
+        f_idx = -1;
         memset(&data, 0, sizeof(data));
+
         log_d("Frame cleared");
-    }
-
-    int CanFrame::set(twai_message_t message) {
-        log_d("Set message: id: %04x, bytes: %d, data: %s", message.identifier, message.data_length_code, message.data);
-
-        id = message.identifier;
-        length = message.data_length_code;
-        rtr = message.rtr;
-        for (int i = 0; i < length; i++) {
-            data.bytes[i] = message.data[i];
-        }
-        return length;
-    }
-
-    twai_message_t CanFrame::get() {
-        twai_message_t message;
-        memset(&message, 0, sizeof(message));
-        message.identifier = id;
-        message.data_length_code = length;
-        for (int i = 0; i < length; i++) {
-            message.data[i] = data.bytes[i];
-        }
-        message.self = self;
-        message.extd = extended;
-
-        log_d("Set message: id: %04x, bytes: %d, data: %s", message.identifier, message.data_length_code, message.data);
-        return message;
     }
 
     bool CanFrame::is() const {

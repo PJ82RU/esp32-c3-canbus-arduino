@@ -2,131 +2,306 @@
 #include "esp32-hal-log.h"
 
 namespace hardware {
-    bool Can::_driver_install(gpio_num_t gpio_tx, gpio_num_t gpio_rx, twai_mode_t mode, can_speed_t speed) {
-        if (_init) {
-            log_w("The driver is already installed");
-            return false;
-        }
 
-        twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, mode);
-        twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-        twai_timing_config_t t_config;
-        switch (speed) {
+    QueueHandle_t queue_can_callback = xQueueCreate(CAN_TX_BUFFER_SIZE, sizeof(CanFrame));
+    QueueHandle_t queue_can_buffer = xQueueCreate(CAN_RX_BUFFER_SIZE, sizeof(CanFrame));
 
-            case can_speed_t::CAN_SPEED_25KBIT:
-                t_config = TWAI_TIMING_CONFIG_25KBITS();
-                log_i("Canbus rate 25KBit");
-                break;
-            case can_speed_t::CAN_SPEED_50KBIT:
-                t_config = TWAI_TIMING_CONFIG_50KBITS();
-                log_i("Canbus rate 50KBit");
-                break;
-            case can_speed_t::CAN_SPEED_100KBIT:
-                t_config = TWAI_TIMING_CONFIG_100KBITS();
-                log_i("Canbus rate 100KBit");
-                break;
-            case can_speed_t::CAN_SPEED_125KBIT:
-                t_config = TWAI_TIMING_CONFIG_125KBITS();
-                log_i("Canbus rate 125KBit");
-                break;
-            case can_speed_t::CAN_SPEED_250KBIT:
-                t_config = TWAI_TIMING_CONFIG_250KBITS();
-                log_i("Canbus rate 250KBit");
-                break;
-            case can_speed_t::CAN_SPEED_500KBIT:
-                t_config = TWAI_TIMING_CONFIG_500KBITS();
-                log_i("Canbus rate 500KBit");
-                break;
-            case can_speed_t::CAN_SPEED_800KBIT:
-                t_config = TWAI_TIMING_CONFIG_800KBITS();
-                log_i("Canbus rate 800KBit");
-                break;
-            default:
-                t_config = TWAI_TIMING_CONFIG_1MBITS();
-                log_i("Canbus rate 1MBit");
-                break;
-        }
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
 
-        if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {
-            log_i("TWAI driver installed, mode %d", mode);
-            delay(100);
+    void task_watchdog(void *pv_parameters) {
+        Can *can = (Can *) pv_parameters;
+        const TickType_t x_delay = 200 / portTICK_PERIOD_MS;
 
-            if (twai_start() == ESP_OK) {
-                log_i("TWAI driver started");
-                delay(100);
-                _init = true;
-            } else {
-                log_w("Failed to start TWAI driver");
-                twai_driver_uninstall();
+        for (;;) {
+            vTaskDelay(x_delay);
+
+            if (twai_get_status_info(&can->twai_status_info) == ESP_OK) {
+                if (can->twai_status_info.state == TWAI_STATE_BUS_OFF) {
+                    if (twai_initiate_recovery() != ESP_OK)
+                        log_w("Could not initiate bus recovery");
+                }
             }
-        } else
-            log_w("Failed to install TWAI driver");
-
-        return _init;
-    }
-
-    void Can::_driver_uninstall() {
-        if (_init) {
-            _init = false;
-            twai_stop();
-            delay(50);
-            twai_driver_uninstall();
-
-            log_i("TWAI driver uninstalled");
-            delay(50);
         }
     }
 
-    bool Can::start(gpio_num_t gpio_tx, gpio_num_t gpio_rx, can_speed_t speed) {
-        return _driver_install(gpio_tx, gpio_rx, TWAI_MODE_NORMAL, speed);
+    void task_receive(void *pv_parameters) {
+        Can *can = (Can *) pv_parameters;
+
+        for (;;) {
+            twai_message_t twai_message;
+            if (can->twai_ready) {
+                if (twai_receive(&twai_message, pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS)) == ESP_OK)
+                    can->frame_processing(twai_message);
+            } else vTaskDelay(pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS));
+        }
     }
 
-    void Can::stop() {
-        _driver_uninstall();
+    void task_callback(void *pv_parameters) {
+        Can *can = (Can *) pv_parameters;
+        CanFrame frame;
+
+        for (;;) {
+            if (xQueueReceive(queue_can_callback, &frame, portMAX_DELAY) == pdTRUE) {
+                event_can_receive_t cb = can->get_callback(frame.f_idx);
+                if (cb) cb(frame);
+            }
+        }
+    }
+
+#pragma clang diagnostic pop
+
+    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) {
+        twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
+        twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
+        twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
+        clear_filter();
+
+        xTaskCreate(&task_callback, "CAN_CALLBACK", 8192, this, 15, &task_cb);
+        log_i("Task callback created");
+
+        xTaskCreatePinnedToCore(&task_receive, "CAN_RECEIVE", 4096, this, 19, &task_rx, 1);
+        log_i("Task receive created");
+
+        xTaskCreatePinnedToCore(&task_watchdog, "CAN_WATCHDOG", 2048, this, 10, &task_wd, 1);
+        log_i("Task watchdog created");
     }
 
     Can::~Can() {
-        _driver_uninstall();
+        end();
+
+        vTaskDelete(task_wd);
+        log_i("Task watchdog deleted");
+        vTaskDelete(task_rx);
+        log_i("Task receive deleted");
+        vTaskDelete(task_cb);
+        log_i("Task callback deleted");
     }
 
-    int Can::send(CanFrame &frame, int timeout) {
-        if (!_init || !frame.is()) {
-            log_w("Canbus not initialized or missing data");
-            return -2;
+    bool Can::twai_install_and_start() {
+        if (!twai_ready) {
+            if (twai_driver_install(&twai_general_config, &twai_timing_config, &twai_filter_config) == ESP_OK) {
+                log_i("TWAI driver installed");
+
+                if (twai_start() == ESP_OK) {
+                    log_i("TWAI driver started");
+                    twai_ready = true;
+                } else
+                    log_w("Failed to start TWAI driver");
+            } else
+                log_w("Failed to install TWAI driver");
+        } else
+            log_w("The driver is already installed");
+
+        return twai_ready;
+    }
+
+    void Can::twai_stop_and_uninstall() {
+        twai_ready = false;
+        twai_stop();
+        vTaskDelay(pdMS_TO_TICKS(100));
+        log_i("TWAI driver stopped");
+
+        twai_driver_uninstall();
+        log_i("TWAI driver uninstalled");
+    }
+
+    bool Can::begin(can_speed_t speed) {
+        if (twai_ready) twai_stop_and_uninstall();
+
+        set_timing(speed);
+        return twai_install_and_start();
+    }
+
+    void Can::end() {
+        if (twai_ready) twai_stop_and_uninstall();
+    }
+
+    bool Can::set_timing(can_speed_t speed) {
+        if (twai_ready) return false;
+
+        switch (speed) {
+            case can_speed_t::CAN_SPEED_25KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_25KBITS();
+                log_i("Canbus rate 25KBit");
+                break;
+            case can_speed_t::CAN_SPEED_50KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_50KBITS();
+                log_i("Canbus rate 50KBit");
+                break;
+            case can_speed_t::CAN_SPEED_100KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_100KBITS();
+                log_i("Canbus rate 100KBit");
+                break;
+            case can_speed_t::CAN_SPEED_125KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
+                log_i("Canbus rate 125KBit");
+                break;
+            case can_speed_t::CAN_SPEED_250KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_250KBITS();
+                log_i("Canbus rate 250KBit");
+                break;
+            case can_speed_t::CAN_SPEED_500KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_500KBITS();
+                log_i("Canbus rate 500KBit");
+                break;
+            case can_speed_t::CAN_SPEED_800KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_800KBITS();
+                log_i("Canbus rate 800KBit");
+                break;
+            case can_speed_t::CAN_SPEED_1MBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_1MBITS();
+                log_i("Canbus rate 1MBit");
+                break;
+        }
+        return true;
+    }
+
+    int Can::set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, event_can_receive_t cb) {
+        if (index < CAN_NUM_FILTER) {
+            can_filter_t *filter = &filters[index];
+            filter->configured = true;
+            filter->extended = extended;
+            filter->id = id & mask;
+            filter->mask = mask;
+            filter->cb_receive = cb;
+            return index;
+        }
+        return -1;
+    }
+
+    int Can::set_filter(uint32_t id, uint32_t mask, bool extended, event_can_receive_t cb) {
+        for (int i = 0; i < CAN_NUM_FILTER; i++) {
+            if (!filters[i].configured)
+                return set_filter(i, id, mask, extended, cb);
+        }
+        log_w("Could not set filter");
+        return -1;
+    }
+
+    can_filter_t Can::get_filter(int8_t index) {
+        return index > -1 && index < CAN_NUM_FILTER ? filters[index] : can_filter_t();
+    }
+
+    void Can::clear_filter() {
+        for (auto &filter: filters) {
+            filter.configured = false;
+            filter.extended = false;
+            filter.id = 0;
+            filter.mask = 0;
+            filter.cb_receive = nullptr;
+        }
+    }
+
+    event_can_receive_t Can::get_callback(int8_t filter_index) {
+        event_can_receive_t result;
+        if (filter_index > -1 && filter_index < CAN_NUM_FILTER) {
+            can_filter_t *filter = &filters[filter_index];
+            result = filter->cb_receive ? filter->cb_receive : cb_receive;
+        } else
+            result = cb_receive;
+
+        return result;
+    }
+
+    bool Can::frame_processing(twai_message_t &twai_message) {
+        if (filter_enabled) {
+            for (int8_t i = 0; i < CAN_NUM_FILTER; i++) {
+                can_filter_t *filter = &filters[i];
+                if (filter->configured) {
+                    if ((twai_message.identifier & filter->mask) == filter->id &&
+                        (twai_message.extd == filter->extended)) {
+                        CanFrame frame;
+                        frame.id = twai_message.identifier;
+                        frame.length = twai_message.data_length_code;
+                        frame.rtr = twai_message.rtr;
+                        frame.extended = twai_message.extd;
+                        frame.f_idx = i;
+                        memcpy(frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
+
+                        if (!callback_disabled && (filter->cb_receive || cb_receive))
+                            xQueueSend(queue_can_callback, &frame, 0);
+                        else
+                            xQueueSend(queue_can_buffer, &frame, 0);
+
+                        log_d("Message 0x%04x receive successfully", twai_message.identifier);
+                        return true;
+                    }
+                }
+            }
+        } else {
+            CanFrame frame;
+            frame.id = twai_message.identifier;
+            frame.length = twai_message.data_length_code;
+            frame.rtr = twai_message.rtr;
+            frame.extended = twai_message.extd;
+            frame.f_idx = -1;
+            memcpy(frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
+
+            if (!callback_disabled && cb_receive)
+                xQueueSend(queue_can_callback, &frame, 0);
+            else
+                xQueueSend(queue_can_buffer, &frame, 0);
+
+            log_d("Message 0x%04x receive successfully", twai_message.identifier);
+            return true;
         }
 
-        if (frame.freq > 0) {
+        log_d("The received message 0x%04x is filtered out", twai_message.identifier);
+        return false;
+    }
+
+    bool Can::send(CanFrame &frame) {
+        if (!twai_ready || twai_status_info.state != TWAI_STATE_RUNNING) {
+            log_w("Canbus is not running");
+            return false;
+        }
+        if (!frame.is()) {
+            log_w("Frame data is missing");
+            return false;
+        }
+        if (frame.freq != 0) {
             unsigned long ms = millis();
             if (frame.ms_next > ms) {
                 log_d("Time is not to send data: %d > %d", frame.ms_next, ms);
-                return 1;
+                return false;
             }
             frame.ms_next = ms + frame.freq;
         }
 
-        twai_message_t message = frame.get();
-        esp_err_t err = twai_transmit(&message, pdMS_TO_TICKS(timeout));
-        if (err == ESP_OK) {
-            log_d("Message sent successfully");
-            return 0;
-        }
+        twai_message_t message{};
+        message.identifier = frame.id;
+        message.data_length_code = frame.length;
+        message.rtr = frame.rtr;
+        message.extd = frame.extended;
+        memcpy(message.data, frame.data.bytes, CAN_FRAME_DATA_SIZE);
 
-        log_w("Failed to send message, ret: %02x", err);
-        return -1;
+        switch (twai_transmit(&message, pdMS_TO_TICKS(CAN_SEND_MS_TO_TICKS))) {
+            case ESP_OK:
+                log_d("Message sent successfully");
+                return true;
+            case ESP_ERR_TIMEOUT:
+                log_w("Failed to send message: TIMEOUT");
+                break;
+            case ESP_ERR_INVALID_ARG:
+                log_w("Failed to send message: INVALID ARG");
+                break;
+            case ESP_FAIL:
+                log_w("Failed to send message: FAIL");
+                break;
+            case ESP_ERR_INVALID_STATE:
+                log_w("Failed to send message: INVALID STATE");
+                break;
+            case ESP_ERR_NOT_SUPPORTED:
+                log_w("Failed to send message: NOT SUPPORTED");
+                break;
+        }
+        return false;
     }
 
-    int Can::receive(CanFrame &frame, int timeout) {
-        if (!_init) {
-            log_w("Canbus not initialized");
-            return 0;
-        }
-
-        twai_message_t message;
-        esp_err_t err = twai_receive(&message, pdMS_TO_TICKS(timeout));
-        if (err == ESP_OK) {
-            log_d("Message receive successfully");
-            return frame.set(message);
-        }
-        return 0;
+    bool Can::receive(CanFrame &frame) {
+        return xQueueReceive(queue_can_buffer, &frame, 0) == pdTRUE;
     }
 }
+

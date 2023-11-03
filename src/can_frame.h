@@ -2,7 +2,8 @@
 #define ESP32_C3_CANBUS_ARDUINO_CAN_FRAME_H
 
 #include "Arduino.h"
-#include "driver/twai.h"
+
+#define CAN_FRAME_DATA_SIZE     8
 
 namespace hardware {
     // --- Заимствовано у Collin Kidder
@@ -40,7 +41,7 @@ namespace hardware {
         int16_t int16[4];
         int8_t int8[8];
 
-        uint8_t bytes[8];
+        uint8_t bytes[CAN_FRAME_DATA_SIZE];
 
         // --- Заимствовано у Collin Kidder
         struct {
@@ -62,33 +63,19 @@ namespace hardware {
 
     class CanFrame {
     public:
-        uint32_t id{};          // 11 or 29 bit identifier
-        bytes_t data{};         // Data bytes (not relevant in RTR frame)
-        uint8_t length{};       // Data length code
-        uint32_t extended{};    // Extended Frame Format (29bit ID)
-        uint32_t self{};        // Transmit as a Self Reception Request. Unused for received.
-        uint32_t rtr{};         // Message is a Remote Frame
-
-        uint16_t freq = 250;            // значение частоты отправки данных, мс
-        unsigned long ms_next = 0;      // время следующей отправки данных, мс
+        uint32_t id{};              // 11- или 29-разрядный идентификатор
+        bytes_t data{};             // Байты данных (не относящиеся к кадру RTR)
+        uint8_t length{};           // Размер данных
+        uint32_t extended{};        // Расширенный формат кадра (29-битный идентификатор)
+        uint32_t rtr{};             // Сообщение - это удаленный кадр
+        int8_t f_idx{};             // Индекс фильтра
+        uint16_t freq = 250;        // значение частоты отправки данных, мс
+        unsigned long ms_next = 0;  // время следующей отправки данных, мс
 
         CanFrame();
 
         /** Очистить значения */
         void clear();
-
-        /**
-         * Запись данных
-         * @param message Сообщение TWAI
-         * @return Количество записанных байт
-         */
-        int set(twai_message_t message);
-
-        /**
-         * Чтение данных
-         * @return Сообщение TWAI
-         */
-        twai_message_t get();
 
         /** Наличие данных */
         bool is() const;

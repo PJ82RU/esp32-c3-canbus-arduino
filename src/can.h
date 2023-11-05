@@ -133,6 +133,9 @@ namespace hardware {
         bool receive(CanFrame &frame);
 
     protected:
+        QueueHandle_t queue_can_callback{};
+        QueueHandle_t queue_can_buffer{};
+
         /** Драйвер TWAI установлен и запущен */
         bool twai_ready = false;
         /** Статус TWAI */
@@ -155,9 +158,9 @@ namespace hardware {
         bool frame_processing(twai_message_t &twai_message);
 
     private:
-        TaskHandle_t task_cb{};
-        TaskHandle_t task_rx{};
-        TaskHandle_t task_wd{};
+        TaskHandle_t task_can_cb{};
+        TaskHandle_t task_can_rx{};
+        TaskHandle_t task_can_wd{};
 
         /** Конфигурация TWAI */
         twai_general_config_t twai_general_config{};

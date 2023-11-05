@@ -3,9 +3,6 @@
 
 namespace hardware {
 
-    QueueHandle_t queue_can_callback = xQueueCreate(CAN_TX_BUFFER_SIZE, sizeof(CanFrame));
-    QueueHandle_t queue_can_buffer = xQueueCreate(CAN_RX_BUFFER_SIZE, sizeof(CanFrame));
-
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 
@@ -42,7 +39,7 @@ namespace hardware {
         CanFrame frame;
 
         for (;;) {
-            if (xQueueReceive(queue_can_callback, &frame, portMAX_DELAY) == pdTRUE) {
+            if (xQueueReceive(can->queue_can_callback, &frame, portMAX_DELAY) == pdTRUE) {
                 event_can_receive_t cb = can->get_callback(frame.f_idx);
                 if (cb) cb(frame);
             }
@@ -58,25 +55,35 @@ namespace hardware {
 
         clear_filter();
 
-        xTaskCreate(&task_callback, "CAN_CALLBACK", 8192, this, 15, &task_cb);
+        queue_can_callback = xQueueCreate(CAN_TX_BUFFER_SIZE, sizeof(CanFrame));
+        log_i("Queue callback created");
+
+        queue_can_buffer = xQueueCreate(CAN_RX_BUFFER_SIZE, sizeof(CanFrame));
+        log_i("Queue buffer created");
+
+        xTaskCreate(&task_callback, "CAN_CALLBACK", 8192, this, 15, &task_can_cb);
         log_i("Task callback created");
 
-        xTaskCreatePinnedToCore(&task_receive, "CAN_RECEIVE", 4096, this, 19, &task_rx, 1);
+        xTaskCreatePinnedToCore(&task_receive, "CAN_RECEIVE", 4096, this, 19, &task_can_rx, 1);
         log_i("Task receive created");
 
-        xTaskCreatePinnedToCore(&task_watchdog, "CAN_WATCHDOG", 2048, this, 10, &task_wd, 1);
+        xTaskCreatePinnedToCore(&task_watchdog, "CAN_WATCHDOG", 2048, this, 10, &task_can_wd, 1);
         log_i("Task watchdog created");
     }
 
     Can::~Can() {
         end();
 
-        vTaskDelete(task_wd);
+        vTaskDelete(task_can_wd);
         log_i("Task watchdog deleted");
-        vTaskDelete(task_rx);
+        vTaskDelete(task_can_rx);
         log_i("Task receive deleted");
-        vTaskDelete(task_cb);
+        vTaskDelete(task_can_cb);
         log_i("Task callback deleted");
+        vQueueDelete(queue_can_buffer);
+        log_i("Queue buffer deleted");
+        vQueueDelete(queue_can_callback);
+        log_i("Queue callback deleted");
     }
 
     bool Can::twai_install_and_start() {

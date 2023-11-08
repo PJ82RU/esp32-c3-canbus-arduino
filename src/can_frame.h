@@ -1,7 +1,7 @@
 #ifndef ESP32_C3_CANBUS_ARDUINO_CAN_FRAME_H
 #define ESP32_C3_CANBUS_ARDUINO_CAN_FRAME_H
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 #define CAN_FRAME_DATA_SIZE     8
 

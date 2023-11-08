@@ -3,6 +3,11 @@
   <component name="CMakeWorkspace">
     <contentRoot DIR="$PROJECT_DIR$" />
   </component>
+  <component name="CidrRootsConfiguration">
+    <sourceRoots>
+      <file path="$PROJECT_DIR$/src" />
+    </sourceRoots>
+  </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="PlatformIOSettings">
     <option name="linkedExternalProjectsSettings">

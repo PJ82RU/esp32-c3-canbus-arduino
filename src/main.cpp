@@ -5,20 +5,27 @@ using namespace hardware;
 
 Can can(GPIO_NUM_5, GPIO_NUM_4);
 
-void on_receive(CanFrame &frame) {
-    Serial.printf("Receive: 0x%03x\n", frame.id);
+size_t on_receive(void *p_value, void *p_parameters) {
+    Serial.println("on_receive");
+    can_value_t *val = (can_value_t *) p_value;
+    Serial.printf("Receive: 0x%03x 0x%02x\n", val->frame.id, val->frame.data.bytes);
+    return 0;
 }
 
-void on_receive_200(CanFrame &frame) {
-    Serial.printf("Receive 200: 0x%03x\n", frame.id);
+size_t on_receive_200(void *p_value, void *p_parameters) {
+    Serial.println("on_receive_200");
+    can_value_t *val = (can_value_t *) p_value;
+    Serial.printf("Receive: 0x%03x 0x%02x\n", val->frame.id, val->frame.data.bytes);
+    return 0;
 }
 
 void setup() {
     Serial.begin(115200);
     delay(1000);
 
-    can.set_filter(0x420, 0xfff, false, on_receive);
-    can.set_filter(0x200, 0xf00, false, on_receive_200);
+    can.callback.init(2);
+    can.set_filter(0x420, 0xfff, false, can.callback.set(on_receive, nullptr, true));
+    can.set_filter(0x200, 0xf00, false, can.callback.set(on_receive_200, nullptr, true));
     can.filter_enabled = true;
     if (can.begin(can_speed_t::CAN_SPEED_125KBIT)) {
         Serial.println("CANBUS initialized");

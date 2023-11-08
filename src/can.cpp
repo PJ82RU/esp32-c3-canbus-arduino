@@ -7,6 +7,7 @@ namespace hardware {
 #pragma ide diagnostic ignored "EndlessLoop"
 
     void task_watchdog(void *pv_parameters) {
+        if (!pv_parameters) return;
         Can *can = (Can *) pv_parameters;
         const TickType_t x_delay = 200 / portTICK_PERIOD_MS;
 
@@ -23,6 +24,7 @@ namespace hardware {
     }
 
     void task_receive(void *pv_parameters) {
+        if (!pv_parameters) return;
         Can *can = (Can *) pv_parameters;
 
         for (;;) {
@@ -34,35 +36,27 @@ namespace hardware {
         }
     }
 
-    void task_callback(void *pv_parameters) {
-        Can *can = (Can *) pv_parameters;
-        CanFrame frame;
-
-        for (;;) {
-            if (xQueueReceive(can->queue_can_callback, &frame, portMAX_DELAY) == pdTRUE) {
-                event_can_receive_t cb = can->get_callback(frame.f_idx);
-                if (cb) cb(frame);
-            }
-        }
+    void Can::on_response(void *p_value, void *p_parameters) {
+        if (!p_value || !p_parameters) return;
+        CanFrame *frame = (CanFrame *) p_value;
+        Can *can = (Can *) p_parameters;
+        can->send(*frame);
     }
 
 #pragma clang diagnostic pop
 
-    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) {
+    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : callback(sizeof(can_value_t)) {
         twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
         twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
         twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
         clear_filter();
 
-        queue_can_callback = xQueueCreate(CAN_TX_BUFFER_SIZE, sizeof(CanFrame));
-        log_i("Queue callback created");
+        callback.cb_receive = on_response;
+        callback.p_receive_parameters = this;
 
         queue_can_buffer = xQueueCreate(CAN_RX_BUFFER_SIZE, sizeof(CanFrame));
         log_i("Queue buffer created");
-
-        xTaskCreate(&task_callback, "CAN_CALLBACK", 8192, this, 15, &task_can_cb);
-        log_i("Task callback created");
 
         xTaskCreatePinnedToCore(&task_receive, "CAN_RECEIVE", 4096, this, 19, &task_can_rx, 1);
         log_i("Task receive created");
@@ -78,12 +72,8 @@ namespace hardware {
         log_i("Task watchdog deleted");
         vTaskDelete(task_can_rx);
         log_i("Task receive deleted");
-        vTaskDelete(task_can_cb);
-        log_i("Task callback deleted");
         vQueueDelete(queue_can_buffer);
         log_i("Queue buffer deleted");
-        vQueueDelete(queue_can_callback);
-        log_i("Queue callback deleted");
     }
 
     bool Can::twai_install_and_start() {
@@ -165,23 +155,23 @@ namespace hardware {
         return true;
     }
 
-    int Can::set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, event_can_receive_t cb) {
+    int Can::set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int8_t index_callback) {
         if (index < CAN_NUM_FILTER) {
             can_filter_t *filter = &filters[index];
             filter->configured = true;
             filter->extended = extended;
             filter->id = id & mask;
             filter->mask = mask;
-            filter->cb_receive = cb;
+            filter->index_callback = index_callback;
             return index;
         }
         return -1;
     }
 
-    int Can::set_filter(uint32_t id, uint32_t mask, bool extended, event_can_receive_t cb) {
+    int Can::set_filter(uint32_t id, uint32_t mask, bool extended, int8_t index_callback) {
         for (int i = 0; i < CAN_NUM_FILTER; i++) {
             if (!filters[i].configured)
-                return set_filter(i, id, mask, extended, cb);
+                return set_filter(i, id, mask, extended, index_callback);
         }
         log_w("Could not set filter");
         return -1;
@@ -197,19 +187,8 @@ namespace hardware {
             filter.extended = false;
             filter.id = 0;
             filter.mask = 0;
-            filter.cb_receive = nullptr;
+            filter.index_callback = -1;
         }
-    }
-
-    event_can_receive_t Can::get_callback(int8_t filter_index) {
-        event_can_receive_t result;
-        if (filter_index > -1 && filter_index < CAN_NUM_FILTER) {
-            can_filter_t *filter = &filters[filter_index];
-            result = filter->cb_receive ? filter->cb_receive : cb_receive;
-        } else
-            result = cb_receive;
-
-        return result;
     }
 
     bool Can::frame_processing(twai_message_t &twai_message) {
@@ -219,18 +198,19 @@ namespace hardware {
                 if (filter->configured) {
                     if ((twai_message.identifier & filter->mask) == filter->id &&
                         (twai_message.extd == filter->extended)) {
-                        CanFrame frame;
-                        frame.id = twai_message.identifier;
-                        frame.length = twai_message.data_length_code;
-                        frame.rtr = twai_message.rtr;
-                        frame.extended = twai_message.extd;
-                        frame.f_idx = i;
-                        memcpy(frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
+                        can_value_t val;
+                        val.index = i;
+                        val.frame.id = twai_message.identifier;
+                        val.frame.length = twai_message.data_length_code;
+                        val.frame.rtr = twai_message.rtr;
+                        val.frame.extended = twai_message.extd;
+                        val.frame.f_idx = i;
+                        memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
 
-                        if (!callback_disabled && (filter->cb_receive || cb_receive))
-                            xQueueSend(queue_can_callback, &frame, 0);
+                        if (!callback_disabled)
+                            callback.call(val);
                         else
-                            xQueueSend(queue_can_buffer, &frame, 0);
+                            xQueueSend(queue_can_buffer, &val.frame, 0);
 
                         log_d("Message 0x%04x receive successfully", twai_message.identifier);
                         return true;
@@ -238,18 +218,19 @@ namespace hardware {
                 }
             }
         } else {
-            CanFrame frame;
-            frame.id = twai_message.identifier;
-            frame.length = twai_message.data_length_code;
-            frame.rtr = twai_message.rtr;
-            frame.extended = twai_message.extd;
-            frame.f_idx = -1;
-            memcpy(frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
+            can_value_t val;
+            val.index = -1;
+            val.frame.id = twai_message.identifier;
+            val.frame.length = twai_message.data_length_code;
+            val.frame.rtr = twai_message.rtr;
+            val.frame.extended = twai_message.extd;
+            val.frame.f_idx = -1;
+            memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
 
-            if (!callback_disabled && cb_receive)
-                xQueueSend(queue_can_callback, &frame, 0);
+            if (!callback_disabled)
+                callback.call(val);
             else
-                xQueueSend(queue_can_buffer, &frame, 0);
+                xQueueSend(queue_can_buffer, &val.frame, 0);
 
             log_d("Message 0x%04x receive successfully", twai_message.identifier);
             return true;

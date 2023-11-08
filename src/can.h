@@ -2,11 +2,11 @@
 #define ESP32_C3_CANBUS_ARDUINO_CAN_H
 
 #include "can_frame.h"
+#include "callback.h"
 #include "driver/twai.h"
 
 #define CAN_NUM_FILTER              32
 #define CAN_RX_BUFFER_SIZE          64
-#define CAN_TX_BUFFER_SIZE          16
 #define CAN_RECEIVE_MS_TO_TICKS     100
 #define CAN_SEND_MS_TO_TICKS        4
 
@@ -29,27 +29,22 @@ namespace hardware {
         bool extended;
         uint32_t id;
         uint32_t mask;
-        event_can_receive_t cb_receive;
+        int8_t index_callback;
     } can_filter_t;
 
+    typedef struct can_value_t : tools::Callback::call_value_t {
+        CanFrame frame;
+    } can_value_t;
 
     class Can {
     public:
-        /** Функция обратного вызова входящего кадра */
-        event_can_receive_t cb_receive = nullptr;
+        /** Объект обратного вызова входящего кадра */
+        tools::Callback callback;
 
         /** Вкл. фильтр */
         bool filter_enabled = false;
         /** Выкл. обратный вызов */
         bool callback_disabled = false;
-
-        /** Canbus
-         * @param gpio_tx Контакт TX
-         * @param gpio_rx Контакт RX
-         */
-        Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx);
-
-        ~Can();
 
         /**
          * Сторожевой пес. Следит за состоянием can-шины
@@ -65,10 +60,19 @@ namespace hardware {
         friend void task_receive(void *pv_parameters);
 
         /**
-         * Обратный вызов входящего кадра
-         * @param pv_parameters
+         * Ответ на запрос
+         * @param p_value      Значение
+         * @param p_parameters Параметры
          */
-        friend void task_callback(void *pv_parameters);
+        static void on_response(void *p_value, void *p_parameters);
+
+        /** Canbus
+         * @param gpio_tx Контакт TX
+         * @param gpio_rx Контакт RX
+         */
+        Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx);
+
+        ~Can();
 
         /**
          * Запуск сервисов can-шины
@@ -89,24 +93,24 @@ namespace hardware {
 
         /**
          * Записать фильтр
-         * @param index     Индекс фильтра
-         * @param id        ID кадра
-         * @param mask      Маска
-         * @param extended  Расширенный формат кадра (29-битный идентификатор)
-         * @param cb        Функция обратного вызова входящего кадра
+         * @param index          Индекс фильтра
+         * @param id             ID кадра
+         * @param mask           Маска
+         * @param extended       Расширенный формат кадра (29-битный идентификатор)
+         * @param index_callback Функция обратного вызова входящего кадра
          * @return Индекс фильтра
          */
-        int set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, event_can_receive_t cb = nullptr);
+        int set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int8_t index_callback = -1);
 
         /**
          * Записать фильтр
-         * @param id        ID кадра
-         * @param mask      Маска
-         * @param extended  Расширенный формат кадра (29-битный идентификатор)
-         * @param cb        Функция обратного вызова входящего кадра
+         * @param id             ID кадра
+         * @param mask           Маска
+         * @param extended       Расширенный формат кадра (29-битный идентификатор)
+         * @param index_callback Функция обратного вызова входящего кадра
          * @return Индекс фильтра
          */
-        int set_filter(uint32_t id, uint32_t mask, bool extended, event_can_receive_t cb = nullptr);
+        int set_filter(uint32_t id, uint32_t mask, bool extended, int8_t index_callback = -1);
 
         /**
          * Прочитать фильтр
@@ -133,7 +137,6 @@ namespace hardware {
         bool receive(CanFrame &frame);
 
     protected:
-        QueueHandle_t queue_can_callback{};
         QueueHandle_t queue_can_buffer{};
 
         /** Драйвер TWAI установлен и запущен */
@@ -144,13 +147,6 @@ namespace hardware {
         can_filter_t filters[CAN_NUM_FILTER]{};
 
         /**
-         * Получить функцию обратного вызова
-         * @param filter_index Индекс фильтра
-         * @return Значение
-         */
-        event_can_receive_t get_callback(int8_t filter_index);
-
-        /**
          * Обработка входящего сообщения
          * @param twai_message Сообщение
          * @return Результат выполнения
@@ -158,7 +154,6 @@ namespace hardware {
         bool frame_processing(twai_message_t &twai_message);
 
     private:
-        TaskHandle_t task_can_cb{};
         TaskHandle_t task_can_rx{};
         TaskHandle_t task_can_wd{};
 

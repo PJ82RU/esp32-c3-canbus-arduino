@@ -38,9 +38,10 @@ namespace hardware {
 
     void Can::on_response(void *p_value, void *p_parameters) {
         if (!p_value || !p_parameters) return;
-        CanFrame *frame = (CanFrame *) p_value;
+
+        can_value_t *val = (can_value_t *) p_value;
         Can *can = (Can *) p_parameters;
-        can->send(*frame);
+        can->send(val->frame);
     }
 
 #pragma clang diagnostic pop

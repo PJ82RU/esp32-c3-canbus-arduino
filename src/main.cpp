@@ -9,7 +9,8 @@ size_t on_receive(void *p_value, void *p_parameters) {
     Serial.println("on_receive");
     can_value_t *val = (can_value_t *) p_value;
     Serial.printf("Receive: 0x%03x 0x%02x\n", val->frame.id, val->frame.data.bytes);
-    return 0;
+    val->frame.id = 0x421;
+    return val->frame.length;
 }
 
 size_t on_receive_200(void *p_value, void *p_parameters) {

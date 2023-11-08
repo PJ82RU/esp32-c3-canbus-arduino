@@ -132,8 +132,6 @@ namespace hardware {
         bool receive(CanFrame &frame);
 
     protected:
-        QueueHandle_t queue_can_buffer{};
-
         /** Драйвер TWAI установлен и запущен */
         bool twai_ready = false;
         /** Статус TWAI */

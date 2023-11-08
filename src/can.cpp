@@ -46,7 +46,7 @@ namespace hardware {
 
 #pragma clang diagnostic pop
 
-    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : callback(sizeof(can_value_t)) {
+    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : callback(CAN_RX_BUFFER_SIZE, sizeof(can_value_t)) {
         twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
         twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
         twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
@@ -55,9 +55,6 @@ namespace hardware {
 
         callback.cb_receive = on_response;
         callback.p_receive_parameters = this;
-
-        queue_can_buffer = xQueueCreate(CAN_RX_BUFFER_SIZE, sizeof(CanFrame));
-        log_i("Queue buffer created");
 
         xTaskCreatePinnedToCore(&task_receive, "CAN_RECEIVE", 4096, this, 19, &task_can_rx, 1);
         log_i("Task receive created");
@@ -73,8 +70,6 @@ namespace hardware {
         log_i("Task watchdog deleted");
         vTaskDelete(task_can_rx);
         log_i("Task receive deleted");
-        vQueueDelete(queue_can_buffer);
-        log_i("Queue buffer deleted");
     }
 
     bool Can::twai_install_and_start() {
@@ -206,9 +201,7 @@ namespace hardware {
                     val.frame.extended = twai_message.extd;
                     val.frame.f_idx = i;
                     memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
-
-                    if (callback.is_init()) callback.call(val);
-                    else xQueueSend(queue_can_buffer, &val.frame, 0);
+                    callback.call(val);
 
                     log_d("The message 0x%04x was received by the filter successfully", twai_message.identifier);
                     return;
@@ -223,9 +216,7 @@ namespace hardware {
         val.frame.extended = twai_message.extd;
         val.frame.f_idx = -1;
         memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
-
-        if (callback.is_init()) callback.call(val);
-        else xQueueSend(queue_can_buffer, &val.frame, 0);
+        callback.call(val);
 
         log_d("Message 0x%04x receive successfully", twai_message.identifier);
     }
@@ -279,7 +270,10 @@ namespace hardware {
     }
 
     bool Can::receive(CanFrame &frame) {
-        return xQueueReceive(queue_can_buffer, &frame, 0) == pdTRUE;
+        can_value_t val{};
+        bool result = callback.read(val);
+        if (result) frame = val.frame;
+        return result;
     }
 }
 

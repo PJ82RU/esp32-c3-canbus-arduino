@@ -27,7 +27,6 @@ void setup() {
     can.callback.init(2);
     can.set_filter(0x420, 0xfff, false, can.callback.set(on_receive, nullptr, true));
     can.set_filter(0x200, 0xf00, false, can.callback.set(on_receive_200, nullptr, true));
-    can.filter_enabled = true;
     if (can.begin(can_speed_t::CAN_SPEED_125KBIT)) {
         Serial.println("CANBUS initialized");
     } else {

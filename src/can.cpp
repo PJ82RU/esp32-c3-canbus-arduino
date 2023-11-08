@@ -192,53 +192,42 @@ namespace hardware {
         }
     }
 
-    bool Can::frame_processing(twai_message_t &twai_message) {
-        if (filter_enabled) {
-            for (int8_t i = 0; i < CAN_NUM_FILTER; i++) {
-                can_filter_t *filter = &filters[i];
-                if (filter->configured) {
-                    if ((twai_message.identifier & filter->mask) == filter->id &&
-                        (twai_message.extd == filter->extended)) {
-                        can_value_t val;
-                        val.index = i;
-                        val.frame.id = twai_message.identifier;
-                        val.frame.length = twai_message.data_length_code;
-                        val.frame.rtr = twai_message.rtr;
-                        val.frame.extended = twai_message.extd;
-                        val.frame.f_idx = i;
-                        memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
+    void Can::frame_processing(twai_message_t &twai_message) {
+        for (int8_t i = 0; i < CAN_NUM_FILTER; i++) {
+            can_filter_t *filter = &filters[i];
+            if (filter->configured) {
+                if ((twai_message.identifier & filter->mask) == filter->id &&
+                    (twai_message.extd == filter->extended)) {
+                    can_value_t val;
+                    val.index = i;
+                    val.frame.id = twai_message.identifier;
+                    val.frame.length = twai_message.data_length_code;
+                    val.frame.rtr = twai_message.rtr;
+                    val.frame.extended = twai_message.extd;
+                    val.frame.f_idx = i;
+                    memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
 
-                        if (!callback_disabled)
-                            callback.call(val);
-                        else
-                            xQueueSend(queue_can_buffer, &val.frame, 0);
+                    if (callback.is_init()) callback.call(val);
+                    else xQueueSend(queue_can_buffer, &val.frame, 0);
 
-                        log_d("Message 0x%04x receive successfully", twai_message.identifier);
-                        return true;
-                    }
+                    log_d("The message 0x%04x was received by the filter successfully", twai_message.identifier);
+                    return;
                 }
             }
-        } else {
-            can_value_t val;
-            val.index = -1;
-            val.frame.id = twai_message.identifier;
-            val.frame.length = twai_message.data_length_code;
-            val.frame.rtr = twai_message.rtr;
-            val.frame.extended = twai_message.extd;
-            val.frame.f_idx = -1;
-            memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
-
-            if (!callback_disabled)
-                callback.call(val);
-            else
-                xQueueSend(queue_can_buffer, &val.frame, 0);
-
-            log_d("Message 0x%04x receive successfully", twai_message.identifier);
-            return true;
         }
+        can_value_t val;
+        val.index = -1;
+        val.frame.id = twai_message.identifier;
+        val.frame.length = twai_message.data_length_code;
+        val.frame.rtr = twai_message.rtr;
+        val.frame.extended = twai_message.extd;
+        val.frame.f_idx = -1;
+        memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
 
-        log_d("The received message 0x%04x is filtered out", twai_message.identifier);
-        return false;
+        if (callback.is_init()) callback.call(val);
+        else xQueueSend(queue_can_buffer, &val.frame, 0);
+
+        log_d("Message 0x%04x receive successfully", twai_message.identifier);
     }
 
     bool Can::send(CanFrame &frame) {

@@ -38,14 +38,6 @@ namespace hardware {
 
     class Can {
     public:
-        /** Объект обратного вызова входящего кадра */
-        tools::Callback callback;
-
-        /** Вкл. фильтр */
-        bool filter_enabled = false;
-        /** Выкл. обратный вызов */
-        bool callback_disabled = false;
-
         /**
          * Сторожевой пес. Следит за состоянием can-шины
          * @param pv_parameters
@@ -65,6 +57,9 @@ namespace hardware {
          * @param p_parameters Параметры
          */
         static void on_response(void *p_value, void *p_parameters);
+
+        /** Объект обратного вызова входящего кадра */
+        tools::Callback callback;
 
         /** Canbus
          * @param gpio_tx Контакт TX
@@ -151,7 +146,7 @@ namespace hardware {
          * @param twai_message Сообщение
          * @return Результат выполнения
          */
-        bool frame_processing(twai_message_t &twai_message);
+        void frame_processing(twai_message_t &twai_message);
 
     private:
         TaskHandle_t task_can_rx{};

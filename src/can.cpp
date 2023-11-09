@@ -37,16 +37,14 @@ namespace hardware {
     }
 
     void Can::on_response(void *p_value, void *p_parameters) {
-        if (!p_value || !p_parameters) return;
-
-        can_value_t *val = (can_value_t *) p_value;
-        Can *can = (Can *) p_parameters;
-        can->send(val->frame);
+        auto *frame = (CanFrame *) p_value;
+        auto *can = (Can *) p_parameters;
+        can->send(*frame);
     }
 
 #pragma clang diagnostic pop
 
-    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : callback(CAN_RX_BUFFER_SIZE, sizeof(can_value_t)) {
+    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK") {
         twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
         twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
         twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
@@ -151,7 +149,7 @@ namespace hardware {
         return true;
     }
 
-    int Can::set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int8_t index_callback) {
+    int Can::set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int16_t index_callback) {
         if (index < CAN_NUM_FILTER) {
             can_filter_t *filter = &filters[index];
             filter->configured = true;
@@ -164,7 +162,7 @@ namespace hardware {
         return -1;
     }
 
-    int Can::set_filter(uint32_t id, uint32_t mask, bool extended, int8_t index_callback) {
+    int Can::set_filter(uint32_t id, uint32_t mask, bool extended, int16_t index_callback) {
         for (int i = 0; i < CAN_NUM_FILTER; i++) {
             if (!filters[i].configured)
                 return set_filter(i, id, mask, extended, index_callback);
@@ -173,7 +171,7 @@ namespace hardware {
         return -1;
     }
 
-    can_filter_t Can::get_filter(int8_t index) {
+    can_filter_t Can::get_filter(int16_t index) {
         return index > -1 && index < CAN_NUM_FILTER ? filters[index] : can_filter_t();
     }
 
@@ -193,30 +191,28 @@ namespace hardware {
             if (filter->configured) {
                 if ((twai_message.identifier & filter->mask) == filter->id &&
                     (twai_message.extd == filter->extended)) {
-                    can_value_t val;
-                    val.index = i;
-                    val.frame.id = twai_message.identifier;
-                    val.frame.length = twai_message.data_length_code;
-                    val.frame.rtr = twai_message.rtr;
-                    val.frame.extended = twai_message.extd;
-                    val.frame.f_idx = i;
-                    memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
-                    callback.call(val);
+                    CanFrame frame;
+                    frame.id = twai_message.identifier;
+                    frame.length = twai_message.data_length_code;
+                    frame.rtr = twai_message.rtr;
+                    frame.extended = twai_message.extd;
+                    frame.f_idx = i;
+                    memcpy(frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
+                    callback.call(&frame, i);
 
                     log_d("The message 0x%04x was received by the filter successfully", twai_message.identifier);
                     return;
                 }
             }
         }
-        can_value_t val;
-        val.index = -1;
-        val.frame.id = twai_message.identifier;
-        val.frame.length = twai_message.data_length_code;
-        val.frame.rtr = twai_message.rtr;
-        val.frame.extended = twai_message.extd;
-        val.frame.f_idx = -1;
-        memcpy(val.frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
-        callback.call(val);
+        CanFrame frame;
+        frame.id = twai_message.identifier;
+        frame.length = twai_message.data_length_code;
+        frame.rtr = twai_message.rtr;
+        frame.extended = twai_message.extd;
+        frame.f_idx = -1;
+        memcpy(frame.data.bytes, twai_message.data, CAN_FRAME_DATA_SIZE);
+        callback.call(&frame);
 
         log_d("Message 0x%04x receive successfully", twai_message.identifier);
     }
@@ -270,10 +266,7 @@ namespace hardware {
     }
 
     bool Can::receive(CanFrame &frame) {
-        can_value_t val{};
-        bool result = callback.read(val);
-        if (result) frame = val.frame;
-        return result;
+        return callback.read(&frame);
     }
 }
 

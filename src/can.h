@@ -29,12 +29,8 @@ namespace hardware {
         bool extended;
         uint32_t id;
         uint32_t mask;
-        int8_t index_callback;
+        int16_t index_callback;
     } can_filter_t;
-
-    typedef struct can_value_t : tools::Callback::call_value_t {
-        CanFrame frame;
-    } can_value_t;
 
     class Can {
     public:
@@ -95,7 +91,7 @@ namespace hardware {
          * @param index_callback Функция обратного вызова входящего кадра
          * @return Индекс фильтра
          */
-        int set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int8_t index_callback = -1);
+        int set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int16_t index_callback = -1);
 
         /**
          * Записать фильтр
@@ -105,14 +101,14 @@ namespace hardware {
          * @param index_callback Функция обратного вызова входящего кадра
          * @return Индекс фильтра
          */
-        int set_filter(uint32_t id, uint32_t mask, bool extended, int8_t index_callback = -1);
+        int set_filter(uint32_t id, uint32_t mask, bool extended, int16_t index_callback = -1);
 
         /**
          * Прочитать фильтр
          * @param index Индекс фильтра
          * @return Значение
          */
-        can_filter_t get_filter(int8_t index);
+        can_filter_t get_filter(int16_t index);
 
         /** Очистить фильтры */
         void clear_filter();

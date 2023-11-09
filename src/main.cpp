@@ -5,19 +5,20 @@ using namespace hardware;
 
 Can can(GPIO_NUM_5, GPIO_NUM_4);
 
-size_t on_receive(void *p_value, void *p_parameters) {
+bool on_receive(void *p_value, void *p_parameters) {
     Serial.println("on_receive");
-    can_value_t *val = (can_value_t *) p_value;
-    Serial.printf("Receive: 0x%03x 0x%02x\n", val->frame.id, val->frame.data.bytes);
-    val->frame.id = 0x421;
-    return val->frame.length;
+    auto *frame = (CanFrame *) p_value;
+
+    Serial.printf("Receive: 0x%03x 0x%02x\n", frame->id, frame->data.bytes);
+    frame->id = 0x421;
+    return true;
 }
 
-size_t on_receive_200(void *p_value, void *p_parameters) {
+bool on_receive_200(void *p_value, void *p_parameters) {
     Serial.println("on_receive_200");
-    can_value_t *val = (can_value_t *) p_value;
-    Serial.printf("Receive: 0x%03x 0x%02x\n", val->frame.id, val->frame.data.bytes);
-    return 0;
+    auto *frame = (CanFrame *) p_value;
+    Serial.printf("Receive: 0x%03x 0x%02x\n", frame->id, frame->data.bytes);
+    return false;
 }
 
 void setup() {

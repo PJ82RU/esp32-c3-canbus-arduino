@@ -145,6 +145,7 @@ namespace hardware {
     private:
         TaskHandle_t task_can_rx{};
         TaskHandle_t task_can_wd{};
+        SemaphoreHandle_t mutex = nullptr;
 
         /** Конфигурация TWAI */
         twai_general_config_t twai_general_config{};

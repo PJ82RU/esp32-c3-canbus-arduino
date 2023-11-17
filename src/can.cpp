@@ -49,6 +49,7 @@ namespace hardware {
         twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
         twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
+        mutex = xSemaphoreCreateMutex();
         clear_filter();
 
         callback.cb_receive = on_response;
@@ -151,12 +152,15 @@ namespace hardware {
 
     int Can::set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int16_t index_callback) {
         if (index < CAN_NUM_FILTER) {
-            can_filter_t *filter = &filters[index];
-            filter->configured = true;
-            filter->extended = extended;
-            filter->id = id & mask;
-            filter->mask = mask;
-            filter->index_callback = index_callback;
+            if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+                can_filter_t *filter = &filters[index];
+                filter->configured = true;
+                filter->extended = extended;
+                filter->id = id & mask;
+                filter->mask = mask;
+                filter->index_callback = index_callback;
+                xSemaphoreGive(mutex);
+            }
             return index;
         }
         return -1;
@@ -176,12 +180,15 @@ namespace hardware {
     }
 
     void Can::clear_filter() {
-        for (auto &filter: filters) {
-            filter.configured = false;
-            filter.extended = false;
-            filter.id = 0;
-            filter.mask = 0;
-            filter.index_callback = -1;
+        if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+            for (auto &filter: filters) {
+                filter.configured = false;
+                filter.extended = false;
+                filter.id = 0;
+                filter.mask = 0;
+                filter.index_callback = -1;
+            }
+            xSemaphoreGive(mutex);
         }
     }
 

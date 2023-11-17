@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #define CAN_FRAME_DATA_SIZE     8
+#define CAN_FRAME_FREQ          250
 
 namespace hardware {
     // --- Заимствовано у Collin Kidder
@@ -63,14 +64,14 @@ namespace hardware {
 
     class CanFrame {
     public:
-        uint32_t id{};              // 11- или 29-разрядный идентификатор
-        bytes_t data{};             // Байты данных (не относящиеся к кадру RTR)
-        uint8_t length{};           // Размер данных
-        uint32_t extended{};        // Расширенный формат кадра (29-битный идентификатор)
-        uint32_t rtr{};             // Сообщение - это удаленный кадр
-        int8_t f_idx{};             // Индекс фильтра
-        uint16_t freq = 250;        // значение частоты отправки данных, мс
-        unsigned long ms_next = 0;  // время следующей отправки данных, мс
+        uint32_t id{};                  // 11- или 29-разрядный идентификатор
+        bytes_t data{};                 // Байты данных (не относящиеся к кадру RTR)
+        uint8_t length{};               // Размер данных
+        uint32_t extended{};            // Расширенный формат кадра (29-битный идентификатор)
+        uint32_t rtr{};                 // Сообщение - это удаленный кадр
+        int8_t f_idx{};                 // Индекс фильтра
+        uint16_t freq = CAN_FRAME_FREQ; // значение частоты отправки данных, мс
+        unsigned long ms_next = 0;      // время следующей отправки данных, мс
 
         CanFrame();
 

@@ -22,8 +22,6 @@ namespace hardware {
         CAN_SPEED_1MBIT
     } can_speed_t;
 
-    typedef void (*event_can_receive_t)(CanFrame &);
-
     typedef struct can_filter_t {
         bool configured;
         bool extended;

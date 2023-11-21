@@ -6,7 +6,7 @@ namespace hardware {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 
-    void task_watchdog(void *pv_parameters) {
+    void task_can_watchdog(void *pv_parameters) {
         if (!pv_parameters) return;
         Can *can = (Can *) pv_parameters;
         const TickType_t x_delay = 200 / portTICK_PERIOD_MS;
@@ -23,7 +23,7 @@ namespace hardware {
         }
     }
 
-    void task_receive(void *pv_parameters) {
+    void task_can_receive(void *pv_parameters) {
         if (!pv_parameters) return;
         Can *can = (Can *) pv_parameters;
 
@@ -55,19 +55,19 @@ namespace hardware {
         callback.cb_receive = on_response;
         callback.p_receive_parameters = this;
 
-        xTaskCreatePinnedToCore(&task_receive, "CAN_RECEIVE", 4096, this, 19, &task_can_rx, 1);
+        xTaskCreatePinnedToCore(&task_can_receive, "CAN_RECEIVE", 4096, this, 19, &task_receive, 1);
         log_i("Task receive created");
 
-        xTaskCreatePinnedToCore(&task_watchdog, "CAN_WATCHDOG", 2048, this, 10, &task_can_wd, 1);
+        xTaskCreatePinnedToCore(&task_can_watchdog, "CAN_WATCHDOG", 2048, this, 10, &task_watchdog, 1);
         log_i("Task watchdog created");
     }
 
     Can::~Can() {
         end();
 
-        vTaskDelete(task_can_wd);
+        vTaskDelete(task_watchdog);
         log_i("Task watchdog deleted");
-        vTaskDelete(task_can_rx);
+        vTaskDelete(task_receive);
         log_i("Task receive deleted");
     }
 

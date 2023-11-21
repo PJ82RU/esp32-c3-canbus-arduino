@@ -36,14 +36,14 @@ namespace hardware {
          * Сторожевой пес. Следит за состоянием can-шины
          * @param pv_parameters
          */
-        friend void task_watchdog(void *pv_parameters);
+        friend void task_can_watchdog(void *pv_parameters);
 
         /**
          * Следим за входящими сообщениями.
          * Все входящие отправляем в обработку (фильтр), далее в очередь и обратный вызов входящего кадра
          * @param pv_parameters
          */
-        friend void task_receive(void *pv_parameters);
+        friend void task_can_receive(void *pv_parameters);
 
         /**
          * Ответ на запрос
@@ -141,8 +141,8 @@ namespace hardware {
         void frame_processing(twai_message_t &twai_message);
 
     private:
-        TaskHandle_t task_can_rx{};
-        TaskHandle_t task_can_wd{};
+        TaskHandle_t task_receive{};
+        TaskHandle_t task_watchdog{};
         SemaphoreHandle_t mutex = nullptr;
 
         /** Конфигурация TWAI */

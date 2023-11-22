@@ -275,5 +275,9 @@ namespace hardware {
     bool Can::receive(CanFrame &frame) {
         return callback.read(&frame);
     }
+
+    UBaseType_t Can::task_stack_depth() {
+        return uxTaskGetStackHighWaterMark(task_receive);
+    }
 }
 

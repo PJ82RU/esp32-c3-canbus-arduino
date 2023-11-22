@@ -125,6 +125,9 @@ namespace hardware {
          */
         bool receive(CanFrame &frame);
 
+        /** Глубина используемого стека */
+        UBaseType_t task_stack_depth();
+
     protected:
         /** Драйвер TWAI установлен и запущен */
         bool twai_ready = false;

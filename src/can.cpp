@@ -9,22 +9,15 @@ namespace hardware {
     void task_can_watchdog(void *pv_parameters) {
         if (!pv_parameters) return;
         Can *can = (Can *) pv_parameters;
+        const TickType_t x_delay = 200 / portTICK_PERIOD_MS;
 
         for (;;) {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(x_delay);
 
             if (twai_get_status_info(&can->twai_status_info) == ESP_OK) {
-                switch (can->twai_status_info.state) {
-                    case TWAI_STATE_STOPPED:
-                        if (can->twai_ready) {
-                            if (twai_start() != ESP_OK) log_w("Failed to restart twai");
-                        }
-                        break;
-                    case TWAI_STATE_BUS_OFF:
-                        if (twai_initiate_recovery() != ESP_OK) log_w("Could not initiate bus recovery");
-                        break;
-                    default:
-                        break;
+                if (can->twai_status_info.state == TWAI_STATE_BUS_OFF) {
+                    if (twai_initiate_recovery() != ESP_OK)
+                        log_w("Could not initiate bus recovery");
                 }
             }
         }

@@ -52,8 +52,7 @@ namespace hardware {
         mutex = xSemaphoreCreateMutex();
         clear_filter();
 
-        callback.cb_receive = on_response;
-        callback.p_receive_parameters = this;
+        callback.set_callback_receive(on_response, this);
 
         xTaskCreatePinnedToCore(&task_can_receive, "CAN_RECEIVE", 4096, this, 19, &task_receive, 1);
         log_i("Task receive created");

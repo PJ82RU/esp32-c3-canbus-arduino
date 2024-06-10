@@ -44,7 +44,8 @@ namespace hardware {
 
 #pragma clang diagnostic pop
 
-    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK") {
+    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) :
+            callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK", 2048) {
         twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
         twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
         twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();

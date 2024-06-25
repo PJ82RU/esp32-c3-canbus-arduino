@@ -44,8 +44,26 @@ namespace hardware {
 
 #pragma clang diagnostic pop
 
+    Can::Can() : callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK", 2048) {
+        twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_num_t::GPIO_NUM_NC, gpio_num_t::GPIO_NUM_NC,
+                                                          TWAI_MODE_NORMAL);
+    }
+
     Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) :
             callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK", 2048) {
+        init(gpio_tx, gpio_rx);
+    }
+
+    Can::~Can() {
+        end();
+
+        vTaskDelete(task_watchdog);
+        log_i("Task watchdog deleted");
+        vTaskDelete(task_receive);
+        log_i("Task receive deleted");
+    }
+
+    void Can::init(gpio_num_t gpio_tx, gpio_num_t gpio_rx) {
         twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
         twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
         twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
@@ -60,15 +78,6 @@ namespace hardware {
 
         xTaskCreatePinnedToCore(&task_can_watchdog, "CAN_WATCHDOG", 2048, this, 10, &task_watchdog, 1);
         log_i("Task watchdog created");
-    }
-
-    Can::~Can() {
-        end();
-
-        vTaskDelete(task_watchdog);
-        log_i("Task watchdog deleted");
-        vTaskDelete(task_receive);
-        log_i("Task receive deleted");
     }
 
     bool Can::twai_install_and_start() {
@@ -100,6 +109,12 @@ namespace hardware {
     }
 
     bool Can::begin(can_speed_t speed) {
+        if (twai_general_config.tx_io == gpio_num_t::GPIO_NUM_NC ||
+            twai_general_config.rx_io == gpio_num_t::GPIO_NUM_NC) {
+            log_w("The object has not been initialized");
+            return false;
+        }
+
         if (twai_ready) twai_stop_and_uninstall();
 
         set_timing(speed);

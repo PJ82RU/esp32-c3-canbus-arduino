@@ -55,13 +55,20 @@ namespace hardware {
         /** Объект обратного вызова входящего кадра */
         tools::Callback callback;
 
+        /** Canbus */
+        Can();
         /** Canbus
          * @param gpio_tx Контакт TX
          * @param gpio_rx Контакт RX
          */
         Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx);
-
         ~Can();
+
+        /** Инициализация объекта
+         * @param gpio_tx Контакт TX
+         * @param gpio_rx Контакт RX
+         */
+        void init(gpio_num_t gpio_tx, gpio_num_t gpio_rx);
 
         /**
          * Запуск сервисов can-шины

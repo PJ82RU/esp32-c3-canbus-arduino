@@ -98,7 +98,7 @@ namespace hardware {
         /**
          * Чтение бит в произвольном порядке
          * @param index Массив индексов бит
-         * @param size  Размер массива индексов бит
+         * @param size Размер массива индексов бит
          * @return bytes_t
          */
         bytes_t get_bytes(const int index[], size_t size);

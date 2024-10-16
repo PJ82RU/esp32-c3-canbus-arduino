@@ -10,29 +10,17 @@ namespace hardware {
         if (!pv_parameters) return;
         Can *can = (Can *) pv_parameters;
         const TickType_t x_delay = 200 / portTICK_PERIOD_MS;
-
         for (;;) {
             vTaskDelay(x_delay);
-
-            if (twai_get_status_info(&can->twai_status_info) == ESP_OK) {
-                if (can->twai_status_info.state == TWAI_STATE_BUS_OFF) {
-                    if (twai_initiate_recovery() != ESP_OK)
-                        log_w("Could not initiate bus recovery");
-                }
-            }
+            can->handle_can_watchdog();
         }
     }
 
     void task_can_receive(void *pv_parameters) {
         if (!pv_parameters) return;
         Can *can = (Can *) pv_parameters;
-
         for (;;) {
-            twai_message_t twai_message;
-            if (can->twai_ready) {
-                if (twai_receive(&twai_message, pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS)) == ESP_OK)
-                    can->frame_processing(twai_message);
-            } else vTaskDelay(pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS));
+            if (!can->handle_can_receive()) vTaskDelay(pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS));
         }
     }
 
@@ -44,23 +32,24 @@ namespace hardware {
 
 #pragma clang diagnostic pop
 
-    Can::Can() : callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK", 2048) {
+    Can::Can() : thread_can_receive("TASK_CAN_RECEIVE", 4096, 19),
+                 thread_can_watchdog("TASK_CAN_WATCHDOG", 2048, 10),
+                 callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK", 2048) {
         twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_num_t::GPIO_NUM_NC, gpio_num_t::GPIO_NUM_NC,
                                                           TWAI_MODE_NORMAL);
     }
 
-    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) :
-            callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK", 2048) {
+    Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : thread_can_receive("TASK_CAN_RECEIVE", 4096, 19),
+                                                       thread_can_watchdog("TASK_CAN_WATCHDOG", 2048, 10),
+                                                       callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CAN_CALLBACK",
+                                                                2048) {
         init(gpio_tx, gpio_rx);
     }
 
     Can::~Can() {
         end();
-
-        vTaskDelete(task_watchdog);
-        log_i("Task watchdog deleted");
-        vTaskDelete(task_receive);
-        log_i("Task receive deleted");
+        thread_can_watchdog.stop();
+        thread_can_receive.stop();
     }
 
     void Can::init(gpio_num_t gpio_tx, gpio_num_t gpio_rx) {
@@ -73,11 +62,8 @@ namespace hardware {
 
         callback.set_callback_receive(on_response, this);
 
-        xTaskCreatePinnedToCore(&task_can_receive, "CAN_RECEIVE", 4096, this, 19, &task_receive, 1);
-        log_i("Task receive created");
-
-        xTaskCreatePinnedToCore(&task_can_watchdog, "CAN_WATCHDOG", 2048, this, 10, &task_watchdog, 1);
-        log_i("Task watchdog created");
+        thread_can_receive.start(&task_can_receive, this);
+        thread_can_watchdog.start(&task_can_watchdog, this);
     }
 
     bool Can::twai_install_and_start() {
@@ -291,8 +277,22 @@ namespace hardware {
         return callback.read(&frame);
     }
 
-    UBaseType_t Can::task_stack_depth() {
-        return uxTaskGetStackHighWaterMark(task_receive);
+    void Can::handle_can_watchdog() {
+        if (twai_get_status_info(&twai_status_info) == ESP_OK) {
+            if (twai_status_info.state == TWAI_STATE_BUS_OFF) {
+                if (twai_initiate_recovery() != ESP_OK)
+                    log_w("Could not initiate bus recovery");
+            }
+        }
+    }
+
+    bool Can::handle_can_receive() {
+        if (twai_ready) {
+            twai_message_t twai_message;
+            if (twai_receive(&twai_message, pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS)) == ESP_OK)
+                frame_processing(twai_message);
+        }
+        return twai_ready;
     }
 }
 

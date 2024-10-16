@@ -2,6 +2,7 @@
 #define ESP32_C3_CANBUS_ARDUINO_CAN_H
 
 #include "can_frame.h"
+#include "thread.h"
 #include "callback.h"
 #include "driver/twai.h"
 
@@ -47,11 +48,15 @@ namespace hardware {
 
         /**
          * Ответ на запрос
-         * @param p_value      Значение
+         * @param p_value Значение
          * @param p_parameters Параметры
          */
         static void on_response(void *p_value, void *p_parameters);
 
+        /** Поток */
+        Thread thread_can_watchdog;
+        /** Поток */
+        Thread thread_can_receive;
         /** Объект обратного вызова входящего кадра */
         tools::Callback callback;
 
@@ -89,10 +94,10 @@ namespace hardware {
 
         /**
          * Записать фильтр
-         * @param index          Индекс фильтра
-         * @param id             ID кадра
-         * @param mask           Маска
-         * @param extended       Расширенный формат кадра (29-битный идентификатор)
+         * @param index Индекс фильтра
+         * @param id ID кадра
+         * @param mask Маска
+         * @param extended Расширенный формат кадра (29-битный идентификатор)
          * @param index_callback Функция обратного вызова входящего кадра
          * @return Индекс фильтра
          */
@@ -100,9 +105,9 @@ namespace hardware {
 
         /**
          * Записать фильтр
-         * @param id             ID кадра
-         * @param mask           Маска
-         * @param extended       Расширенный формат кадра (29-битный идентификатор)
+         * @param id ID кадра
+         * @param mask Маска
+         * @param extended Расширенный формат кадра (29-битный идентификатор)
          * @param index_callback Функция обратного вызова входящего кадра
          * @return Индекс фильтра
          */
@@ -132,9 +137,6 @@ namespace hardware {
          */
         bool receive(CanFrame &frame);
 
-        /** Глубина используемого стека */
-        UBaseType_t task_stack_depth();
-
     protected:
         /** Драйвер TWAI установлен и запущен */
         bool twai_ready = false;
@@ -150,9 +152,13 @@ namespace hardware {
          */
         void frame_processing(twai_message_t &twai_message);
 
+        /** Выполнение потока */
+        void handle_can_watchdog();
+
+        /** Выполнение потока */
+        bool handle_can_receive();
+
     private:
-        TaskHandle_t task_receive{};
-        TaskHandle_t task_watchdog{};
         SemaphoreHandle_t mutex = nullptr;
 
         /** Конфигурация TWAI */

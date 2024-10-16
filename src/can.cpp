@@ -62,8 +62,8 @@ namespace hardware {
 
         callback.set_callback_receive(on_response, this);
 
-        thread_can_receive.start(&task_can_receive, this);
-        thread_can_watchdog.start(&task_can_watchdog, this);
+        thread_can_receive.start(&task_can_receive, this, 1);
+        thread_can_watchdog.start(&task_can_watchdog, this, 1);
     }
 
     bool Can::twai_install_and_start() {

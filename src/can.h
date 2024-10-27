@@ -82,6 +82,13 @@ namespace hardware {
         twai_state_t state() const;
 
         /**
+         * Ожидание подключения к can
+         * @param timeout Таймаут
+         * @return Подключение
+         */
+        bool wait_running(unsigned long timeout = 0) const;
+
+        /**
          * Изменить скорость can-шины
          * @param speed Значение
          * @return Результат выполнения

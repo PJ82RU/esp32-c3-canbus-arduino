@@ -113,6 +113,16 @@ namespace hardware {
         return twai_status_info.state;
     }
 
+    bool Can::wait_running(unsigned long timeout) const {
+        const unsigned long ms_stop = millis() + timeout;
+        bool result;
+        while (!(result = twai_status_info.state == twai_state_t::TWAI_STATE_RUNNING) &&
+               (timeout == 0 || ms_stop > millis()))
+            vTaskDelay(pdMS_TO_TICKS(50));
+
+        return result;
+    }
+
     bool Can::set_timing(can_speed_t speed) {
         bool result = false;
         if (semaphore.take()) {

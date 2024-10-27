@@ -55,17 +55,18 @@ namespace hardware {
         if (!twai_ready) {
             if (twai_driver_install(&twai_general_config, &twai_timing_config, &twai_filter_config) == ESP_OK) {
                 log_i("TWAI driver installed");
-
                 if (twai_start() == ESP_OK) {
                     log_i("TWAI driver started");
                     twai_ready = true;
-                } else
+                } else {
                     log_w("Failed to start TWAI driver");
-            } else
+                }
+            } else {
                 log_w("Failed to install TWAI driver");
-        } else
+            }
+        } else {
             log_w("The driver is already installed");
-
+        }
         return twai_ready;
     }
 
@@ -234,6 +235,7 @@ namespace hardware {
     }
 
     bool Can::send(CanFrame &frame) {
+        bool result = false;
         if (frame.is()) {
             if (semaphore.take()) {
                 if (twai_ready && twai_status_info.state == TWAI_STATE_RUNNING) {
@@ -251,7 +253,8 @@ namespace hardware {
                         switch (twai_transmit(&message, pdMS_TO_TICKS(CAN_SEND_MS_TO_TICKS))) {
                             case ESP_OK:
                                 log_d("Message sent successfully");
-                                return true;
+                                result = true;
+                                break;
                             case ESP_ERR_TIMEOUT:
                                 log_w("Failed to send message: TIMEOUT");
                                 break;
@@ -279,7 +282,7 @@ namespace hardware {
         } else {
             log_w("Frame data is missing");
         }
-        return false;
+        return result;
     }
 
     bool Can::receive(CanFrame &frame) {

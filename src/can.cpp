@@ -34,48 +34,21 @@ namespace hardware {
 
 #pragma clang diagnostic pop
 
-    Can::Can() : thread_can_receive("TASK_CAN_RECEIVE", 4096, 19),
-                 thread_can_watchdog("TASK_CAN_WATCHDOG", 2048, 10),
-                 callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CALLBACK_CAN", 2048),
-                 semaphore(true) {
-        twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_num_t::GPIO_NUM_NC, gpio_num_t::GPIO_NUM_NC,
-                                                          TWAI_MODE_NORMAL);
-    }
-
     Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : thread_can_receive("TASK_CAN_RECEIVE", 4096, 19),
                                                        thread_can_watchdog("TASK_CAN_WATCHDOG", 2048, 10),
                                                        callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CALLBACK_CAN",
                                                                 2048),
                                                        semaphore(true) {
-        init(gpio_tx, gpio_rx);
+        twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
+        twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
+        twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
+        callback.parent_callback.set(on_response, this);
+        clear_filter();
     }
 
     Can::~Can() {
         end();
-        thread_can_watchdog.stop();
-        thread_can_receive.stop();
-    }
-
-    bool Can::init(gpio_num_t gpio_tx, gpio_num_t gpio_rx) {
-        bool result = false;
-        if (semaphore.take()) {
-            if (!thread_can_receive.is_started()) {
-                twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
-                twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
-                twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-
-                clear_filter();
-
-                callback.parent_callback.set(on_response, this);
-
-                result = thread_can_receive.start(&task_can_receive, this, 1);
-                thread_can_watchdog.start(&task_can_watchdog, this, 1);
-            } else {
-                log_w("The object has already been initialized");
-            }
-            semaphore.give();
-        }
-        return result;
     }
 
     bool Can::twai_install_and_start() {
@@ -111,9 +84,11 @@ namespace hardware {
         if (semaphore.take()) {
             if (twai_general_config.tx_io != gpio_num_t::GPIO_NUM_NC &&
                 twai_general_config.rx_io != gpio_num_t::GPIO_NUM_NC) {
+
                 if (twai_ready) twai_stop_and_uninstall();
                 set_timing(speed);
-                result = twai_install_and_start();
+                result = twai_install_and_start() && thread_can_receive.start(&task_can_receive, this, 1) &&
+                         thread_can_watchdog.start(&task_can_watchdog, this, 1);
             } else {
                 log_w("The object has not been initialized");
             }
@@ -124,7 +99,11 @@ namespace hardware {
 
     void Can::end() {
         if (semaphore.take()) {
-            if (twai_ready) twai_stop_and_uninstall();
+            if (twai_ready) {
+                thread_can_watchdog.stop();
+                thread_can_receive.stop();
+                twai_stop_and_uninstall();
+            }
             semaphore.give();
         }
     }

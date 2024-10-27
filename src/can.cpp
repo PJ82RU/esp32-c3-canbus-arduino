@@ -7,20 +7,22 @@ namespace hardware {
 #pragma ide diagnostic ignored "EndlessLoop"
 
     void task_can_watchdog(void *pv_parameters) {
-        if (!pv_parameters) return;
-        Can *can = (Can *) pv_parameters;
-        const TickType_t x_delay = 200 / portTICK_PERIOD_MS;
-        for (;;) {
-            vTaskDelay(x_delay);
-            can->handle_can_watchdog();
+        if (pv_parameters) {
+            Can *can = (Can *) pv_parameters;
+            const TickType_t x_delay = 200 / portTICK_PERIOD_MS;
+            for (;;) {
+                vTaskDelay(x_delay);
+                can->handle_can_watchdog();
+            }
         }
     }
 
     void task_can_receive(void *pv_parameters) {
-        if (!pv_parameters) return;
-        Can *can = (Can *) pv_parameters;
-        for (;;) {
-            if (!can->handle_can_receive()) vTaskDelay(pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS));
+        if (pv_parameters) {
+            Can *can = (Can *) pv_parameters;
+            for (;;) {
+                if (!can->handle_can_receive()) vTaskDelay(pdMS_TO_TICKS(CAN_RECEIVE_MS_TO_TICKS));
+            }
         }
     }
 

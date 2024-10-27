@@ -78,6 +78,9 @@ namespace hardware {
         /** Остановить сервисы can-шины */
         void end();
 
+        /** Статус */
+        twai_state_t state() const;
+
         /**
          * Изменить скорость can-шины
          * @param speed Значение

@@ -109,6 +109,10 @@ namespace hardware {
         }
     }
 
+    twai_state_t Can::state() const {
+        return twai_status_info.state;
+    }
+
     bool Can::set_timing(can_speed_t speed) {
         bool result = false;
         if (semaphore.take()) {

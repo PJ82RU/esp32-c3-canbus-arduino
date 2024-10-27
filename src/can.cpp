@@ -36,7 +36,8 @@ namespace hardware {
 
     Can::Can() : thread_can_receive("TASK_CAN_RECEIVE", 4096, 19),
                  thread_can_watchdog("TASK_CAN_WATCHDOG", 2048, 10),
-                 callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CALLBACK_CAN", 2048) {
+                 callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CALLBACK_CAN", 2048),
+                 semaphore(true) {
         twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_num_t::GPIO_NUM_NC, gpio_num_t::GPIO_NUM_NC,
                                                           TWAI_MODE_NORMAL);
     }
@@ -44,7 +45,8 @@ namespace hardware {
     Can::Can(gpio_num_t gpio_tx, gpio_num_t gpio_rx) : thread_can_receive("TASK_CAN_RECEIVE", 4096, 19),
                                                        thread_can_watchdog("TASK_CAN_WATCHDOG", 2048, 10),
                                                        callback(CAN_RX_BUFFER_SIZE, sizeof(CanFrame), "CALLBACK_CAN",
-                                                                2048) {
+                                                                2048),
+                                                       semaphore(true) {
         init(gpio_tx, gpio_rx);
     }
 

@@ -3,8 +3,8 @@
 
 namespace hardware {
     CanFrame::CanFrame() {
-        log_d("Frame created");
         clear();
+        log_d("Frame created");
     }
 
     void CanFrame::clear() {
@@ -14,7 +14,6 @@ namespace hardware {
         rtr = 0;
         f_idx = -1;
         memset(&data, 0, sizeof(data));
-
         log_d("Frame cleared");
     }
 

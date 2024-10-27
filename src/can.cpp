@@ -52,18 +52,26 @@ namespace hardware {
         thread_can_receive.stop();
     }
 
-    void Can::init(gpio_num_t gpio_tx, gpio_num_t gpio_rx) {
-        twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
-        twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
-        twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+    bool Can::init(gpio_num_t gpio_tx, gpio_num_t gpio_rx) {
+        bool result = false;
+        if (semaphore.take()) {
+            if (!thread_can_receive.is_started()) {
+                twai_general_config = TWAI_GENERAL_CONFIG_DEFAULT(gpio_tx, gpio_rx, TWAI_MODE_NORMAL);
+                twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
+                twai_filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
-        mutex = xSemaphoreCreateMutex();
-        clear_filter();
+                clear_filter();
 
-        callback.set_callback_receive(on_response, this);
+                callback.parent_callback.set(on_response, this);
 
-        thread_can_receive.start(&task_can_receive, this, 1);
-        thread_can_watchdog.start(&task_can_watchdog, this, 1);
+                result = thread_can_receive.start(&task_can_receive, this, 1);
+                thread_can_watchdog.start(&task_can_watchdog, this, 1);
+            } else {
+                log_w("The object has already been initialized");
+            }
+            semaphore.give();
+        }
+        return result;
     }
 
     bool Can::twai_install_and_start() {
@@ -95,76 +103,93 @@ namespace hardware {
     }
 
     bool Can::begin(can_speed_t speed) {
-        if (twai_general_config.tx_io == gpio_num_t::GPIO_NUM_NC ||
-            twai_general_config.rx_io == gpio_num_t::GPIO_NUM_NC) {
-            log_w("The object has not been initialized");
-            return false;
+        bool result = false;
+        if (semaphore.take()) {
+            if (twai_general_config.tx_io != gpio_num_t::GPIO_NUM_NC &&
+                twai_general_config.rx_io != gpio_num_t::GPIO_NUM_NC) {
+                if (twai_ready) twai_stop_and_uninstall();
+                set_timing(speed);
+                result = twai_install_and_start();
+            } else {
+                log_w("The object has not been initialized");
+            }
+            semaphore.give();
         }
-
-        if (twai_ready) twai_stop_and_uninstall();
-
-        set_timing(speed);
-        return twai_install_and_start();
+        return result;
     }
 
     void Can::end() {
-        if (twai_ready) twai_stop_and_uninstall();
+        if (semaphore.take()) {
+            if (twai_ready) twai_stop_and_uninstall();
+            semaphore.give();
+        }
     }
 
     bool Can::set_timing(can_speed_t speed) {
-        if (twai_ready) return false;
-
-        switch (speed) {
-            case can_speed_t::CAN_SPEED_25KBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_25KBITS();
-                log_i("Canbus rate 25KBit");
-                break;
-            case can_speed_t::CAN_SPEED_50KBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_50KBITS();
-                log_i("Canbus rate 50KBit");
-                break;
-            case can_speed_t::CAN_SPEED_100KBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_100KBITS();
-                log_i("Canbus rate 100KBit");
-                break;
-            case can_speed_t::CAN_SPEED_125KBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
-                log_i("Canbus rate 125KBit");
-                break;
-            case can_speed_t::CAN_SPEED_250KBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_250KBITS();
-                log_i("Canbus rate 250KBit");
-                break;
-            case can_speed_t::CAN_SPEED_500KBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_500KBITS();
-                log_i("Canbus rate 500KBit");
-                break;
-            case can_speed_t::CAN_SPEED_800KBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_800KBITS();
-                log_i("Canbus rate 800KBit");
-                break;
-            case can_speed_t::CAN_SPEED_1MBIT:
-                twai_timing_config = TWAI_TIMING_CONFIG_1MBITS();
-                log_i("Canbus rate 1MBit");
-                break;
+        bool result = false;
+        if (semaphore.take()) {
+            if (twai_ready) {
+                switch (speed) {
+                    case can_speed_t::CAN_SPEED_25KBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_25KBITS();
+                        log_i("Canbus rate 25KBit");
+                        break;
+                    case can_speed_t::CAN_SPEED_50KBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_50KBITS();
+                        log_i("Canbus rate 50KBit");
+                        break;
+                    case can_speed_t::CAN_SPEED_100KBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_100KBITS();
+                        log_i("Canbus rate 100KBit");
+                        break;
+                    case can_speed_t::CAN_SPEED_125KBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
+                        log_i("Canbus rate 125KBit");
+                        break;
+                    case can_speed_t::CAN_SPEED_250KBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_250KBITS();
+                        log_i("Canbus rate 250KBit");
+                        break;
+                    case can_speed_t::CAN_SPEED_500KBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_500KBITS();
+                        log_i("Canbus rate 500KBit");
+                        break;
+                    case can_speed_t::CAN_SPEED_800KBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_800KBITS();
+                        log_i("Canbus rate 800KBit");
+                        break;
+                    case can_speed_t::CAN_SPEED_1MBIT:
+                        twai_timing_config = TWAI_TIMING_CONFIG_1MBITS();
+                        log_i("Canbus rate 1MBit");
+                        break;
+                }
+                result = true;
+                log_d("The speed of the can bus has been changed");
+            } else {
+                log_d("The object was not running");
+            }
+            semaphore.give();
         }
-        return true;
+        return result;
     }
 
     int Can::set_filter(uint8_t index, uint32_t id, uint32_t mask, bool extended, int16_t index_callback) {
-        if (index < CAN_NUM_FILTER) {
-            if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
-                can_filter_t *filter = &filters[index];
-                filter->configured = true;
-                filter->extended = extended;
-                filter->id = id & mask;
-                filter->mask = mask;
-                filter->index_callback = index_callback;
-                xSemaphoreGive(mutex);
-            }
-            return index;
+        int result;
+        if (index < CAN_NUM_FILTER && semaphore.take()) {
+            can_filter_t *filter = &filters[index];
+            filter->configured = true;
+            filter->extended = extended;
+            filter->id = id & mask;
+            filter->mask = mask;
+            filter->index_callback = index_callback;
+            result = index;
+            log_d("The filter was added successfully");
+            semaphore.give();
+        } else {
+            result = -1;
+            log_d("Error adding the filter. The filter index is outside the range");
         }
-        return -1;
+        return result;
     }
 
     int Can::set_filter(uint32_t id, uint32_t mask, bool extended, int16_t index_callback) {
@@ -181,7 +206,7 @@ namespace hardware {
     }
 
     void Can::clear_filter() {
-        if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+        if (semaphore.take()) {
             for (auto &filter: filters) {
                 filter.configured = false;
                 filter.extended = false;
@@ -189,7 +214,7 @@ namespace hardware {
                 filter.mask = 0;
                 filter.index_callback = -1;
             }
-            xSemaphoreGive(mutex);
+            semaphore.give();
         }
     }
 
@@ -226,49 +251,50 @@ namespace hardware {
     }
 
     bool Can::send(CanFrame &frame) {
-        if (!twai_ready || twai_status_info.state != TWAI_STATE_RUNNING) {
-            log_w("Canbus is not running");
-            return false;
-        }
-        if (!frame.is()) {
-            log_w("Frame data is missing");
-            return false;
-        }
-        if (frame.freq != 0) {
-            unsigned long ms = millis();
-            if (frame.ms_next > ms) {
-                log_d("Time is not to send data: %d > %d", frame.ms_next, ms);
-                return false;
+        if (frame.is()) {
+            if (semaphore.take()) {
+                if (twai_ready && twai_status_info.state == TWAI_STATE_RUNNING) {
+                    const unsigned long ms = millis();
+                    if (frame.ms_next <= ms) {
+                        if (frame.freq != 0) frame.ms_next = ms + frame.freq;
+
+                        twai_message_t message{};
+                        message.identifier = frame.id;
+                        message.data_length_code = frame.length;
+                        message.rtr = frame.rtr;
+                        message.extd = frame.extended;
+                        memcpy(message.data, frame.data.bytes, CAN_FRAME_DATA_SIZE);
+
+                        switch (twai_transmit(&message, pdMS_TO_TICKS(CAN_SEND_MS_TO_TICKS))) {
+                            case ESP_OK:
+                                log_d("Message sent successfully");
+                                return true;
+                            case ESP_ERR_TIMEOUT:
+                                log_w("Failed to send message: TIMEOUT");
+                                break;
+                            case ESP_ERR_INVALID_ARG:
+                                log_w("Failed to send message: INVALID ARG");
+                                break;
+                            case ESP_FAIL:
+                                log_w("Failed to send message: FAIL");
+                                break;
+                            case ESP_ERR_INVALID_STATE:
+                                log_w("Failed to send message: INVALID STATE");
+                                break;
+                            case ESP_ERR_NOT_SUPPORTED:
+                                log_w("Failed to send message: NOT SUPPORTED");
+                                break;
+                        }
+                    } else {
+                        log_d("Time is not to send data: %d > %d", frame.ms_next, ms);
+                    }
+                } else {
+                    log_w("Canbus is not running");
+                }
+                semaphore.give();
             }
-            frame.ms_next = ms + frame.freq;
-        }
-
-        twai_message_t message{};
-        message.identifier = frame.id;
-        message.data_length_code = frame.length;
-        message.rtr = frame.rtr;
-        message.extd = frame.extended;
-        memcpy(message.data, frame.data.bytes, CAN_FRAME_DATA_SIZE);
-
-        switch (twai_transmit(&message, pdMS_TO_TICKS(CAN_SEND_MS_TO_TICKS))) {
-            case ESP_OK:
-                log_d("Message sent successfully");
-                return true;
-            case ESP_ERR_TIMEOUT:
-                log_w("Failed to send message: TIMEOUT");
-                break;
-            case ESP_ERR_INVALID_ARG:
-                log_w("Failed to send message: INVALID ARG");
-                break;
-            case ESP_FAIL:
-                log_w("Failed to send message: FAIL");
-                break;
-            case ESP_ERR_INVALID_STATE:
-                log_w("Failed to send message: INVALID STATE");
-                break;
-            case ESP_ERR_NOT_SUPPORTED:
-                log_w("Failed to send message: NOT SUPPORTED");
-                break;
+        } else {
+            log_w("Frame data is missing");
         }
         return false;
     }

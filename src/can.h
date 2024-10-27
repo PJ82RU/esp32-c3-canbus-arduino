@@ -3,6 +3,7 @@
 
 #include "can_frame.h"
 #include "thread.h"
+#include "semaphore.h"
 #include "callback.h"
 #include "driver/twai.h"
 
@@ -72,8 +73,9 @@ namespace hardware {
         /** Инициализация объекта
          * @param gpio_tx Контакт TX
          * @param gpio_rx Контакт RX
+         * @return Результат выполнения
          */
-        void init(gpio_num_t gpio_tx, gpio_num_t gpio_rx);
+        bool init(gpio_num_t gpio_tx, gpio_num_t gpio_rx);
 
         /**
          * Запуск сервисов can-шины
@@ -159,7 +161,7 @@ namespace hardware {
         bool handle_can_receive();
 
     private:
-        SemaphoreHandle_t mutex = nullptr;
+        tools::Semaphore semaphore;
 
         /** Конфигурация TWAI */
         twai_general_config_t twai_general_config{};

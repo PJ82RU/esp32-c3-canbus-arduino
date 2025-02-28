@@ -12,8 +12,10 @@
 #define CAN_RECEIVE_MS_TO_TICKS     100
 #define CAN_SEND_MS_TO_TICKS        4
 
-namespace hardware {
-    typedef enum can_speed_t {
+namespace hardware
+{
+    typedef enum can_speed_t
+    {
         CAN_SPEED_25KBIT,
         CAN_SPEED_50KBIT,
         CAN_SPEED_100KBIT,
@@ -24,7 +26,8 @@ namespace hardware {
         CAN_SPEED_1MBIT
     } can_speed_t;
 
-    typedef struct can_filter_t {
+    typedef struct can_filter_t
+    {
         bool configured;
         bool extended;
         uint32_t id;
@@ -32,27 +35,28 @@ namespace hardware {
         int16_t index_callback;
     } can_filter_t;
 
-    class Can {
+    class Can
+    {
     public:
         /**
          * Сторожевой пес. Следит за состоянием can-шины
          * @param pv_parameters
          */
-        friend void task_can_watchdog(void *pv_parameters);
+        friend void task_can_watchdog(void* pv_parameters);
 
         /**
          * Следим за входящими сообщениями.
          * Все входящие отправляем в обработку (фильтр), далее в очередь и обратный вызов входящего кадра
          * @param pv_parameters
          */
-        friend void task_can_receive(void *pv_parameters);
+        friend void task_can_receive(void* pv_parameters);
 
         /**
          * Ответ на запрос
          * @param p_value Значение
          * @param p_parameters Параметры
          */
-        static void on_response(void *p_value, void *p_parameters);
+        static void on_response(void* p_value, void* p_parameters);
 
         /** Поток */
         Thread thread_can_watchdog;
@@ -121,7 +125,7 @@ namespace hardware {
          * @param index Индекс фильтра
          * @return Значение
          */
-        can_filter_t get_filter(int16_t index);
+        can_filter_t get_filter(int16_t index) const;
 
         /** Очистить фильтры */
         void clear_filter();
@@ -131,14 +135,14 @@ namespace hardware {
          * @param frame Кадр данных
          * @return Результат выполнения
          */
-        bool send(CanFrame &frame);
+        bool send(CanFrame& frame);
 
         /**
          * Чтение кадра данных из буфера
          * @param frame Кадр данных
          * @return Результат выполнения
          */
-        bool receive(CanFrame &frame);
+        bool receive(CanFrame& frame);
 
     protected:
         /** Драйвер TWAI установлен и запущен */
@@ -153,7 +157,7 @@ namespace hardware {
          * @param twai_message Сообщение
          * @return Результат выполнения
          */
-        void frame_processing(twai_message_t &twai_message);
+        void frame_processing(const twai_message_t& twai_message);
 
         /** Выполнение потока */
         void handle_can_watchdog();

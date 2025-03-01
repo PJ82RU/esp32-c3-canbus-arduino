@@ -142,7 +142,7 @@ namespace hardware
         return twai_status_info.state;
     }
 
-    bool Can::wait_running(const unsigned long timeout) const
+    bool Can::wait_running(const unsigned long timeout)
     {
         const unsigned long ms_stop = millis() + timeout;
         bool result;

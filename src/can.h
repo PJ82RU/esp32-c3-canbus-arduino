@@ -90,7 +90,7 @@ namespace hardware
          * @param timeout Таймаут
          * @return Подключение
          */
-        bool wait_running(unsigned long timeout = 0) const;
+        bool wait_running(unsigned long timeout = 0);
 
         /**
          * Изменить скорость can-шины

@@ -101,7 +101,7 @@ namespace hardware
         log_i("TWAI driver uninstalled");
     }
 
-    bool Can::begin(const can_speed_t speed)
+    bool Can::begin()
     {
         bool result = false;
         if (semaphore.take())

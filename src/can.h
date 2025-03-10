@@ -64,6 +64,8 @@ namespace hardware
         Thread thread_can_receive;
         /** Объект обратного вызова входящего кадра */
         tools::Callback callback;
+        /** Скорость can-шины */
+        can_speed_t speed = can_speed_t::CAN_SPEED_125KBIT;
 
         /** Canbus
          * @param gpio_tx Контакт TX
@@ -74,10 +76,9 @@ namespace hardware
 
         /**
          * Запуск сервисов can-шины
-         * @param speed Скорость can-шины
          * @return Результат выполнения
          */
-        bool begin(can_speed_t speed = can_speed_t::CAN_SPEED_125KBIT);
+        bool begin();
 
         /** Остановить сервисы can-шины */
         void end();

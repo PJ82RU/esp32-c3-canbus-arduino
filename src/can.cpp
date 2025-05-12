@@ -111,7 +111,8 @@ namespace hardware
             {
                 if (twai_ready) twai_stop_and_uninstall();
                 set_timing(speed);
-                result = twai_install_and_start() && thread_can_receive.start(&task_can_receive, this, 1) &&
+                result = twai_install_and_start() &&
+                    thread_can_receive.start(&task_can_receive, this, 1) &&
                     thread_can_watchdog.start(&task_can_watchdog, this, 1);
             }
             else
@@ -153,58 +154,48 @@ namespace hardware
         return result;
     }
 
-    bool Can::set_timing(const can_speed_t speed)
+    void Can::set_timing(const can_speed_t speed)
     {
-        bool result = false;
         if (semaphore.take())
         {
-            if (twai_ready)
+            switch (speed)
             {
-                switch (speed)
-                {
-                case can_speed_t::CAN_SPEED_25KBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_25KBITS();
-                    log_i("Canbus rate 25KBit");
-                    break;
-                case can_speed_t::CAN_SPEED_50KBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_50KBITS();
-                    log_i("Canbus rate 50KBit");
-                    break;
-                case can_speed_t::CAN_SPEED_100KBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_100KBITS();
-                    log_i("Canbus rate 100KBit");
-                    break;
-                case can_speed_t::CAN_SPEED_125KBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
-                    log_i("Canbus rate 125KBit");
-                    break;
-                case can_speed_t::CAN_SPEED_250KBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_250KBITS();
-                    log_i("Canbus rate 250KBit");
-                    break;
-                case can_speed_t::CAN_SPEED_500KBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_500KBITS();
-                    log_i("Canbus rate 500KBit");
-                    break;
-                case can_speed_t::CAN_SPEED_800KBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_800KBITS();
-                    log_i("Canbus rate 800KBit");
-                    break;
-                case can_speed_t::CAN_SPEED_1MBIT:
-                    twai_timing_config = TWAI_TIMING_CONFIG_1MBITS();
-                    log_i("Canbus rate 1MBit");
-                    break;
-                }
-                result = true;
-                log_d("The speed of the can bus has been changed");
+            case can_speed_t::CAN_SPEED_25KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_25KBITS();
+                log_i("Canbus rate 25KBit");
+                break;
+            case can_speed_t::CAN_SPEED_50KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_50KBITS();
+                log_i("Canbus rate 50KBit");
+                break;
+            case can_speed_t::CAN_SPEED_100KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_100KBITS();
+                log_i("Canbus rate 100KBit");
+                break;
+            case can_speed_t::CAN_SPEED_125KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_125KBITS();
+                log_i("Canbus rate 125KBit");
+                break;
+            case can_speed_t::CAN_SPEED_250KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_250KBITS();
+                log_i("Canbus rate 250KBit");
+                break;
+            case can_speed_t::CAN_SPEED_500KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_500KBITS();
+                log_i("Canbus rate 500KBit");
+                break;
+            case can_speed_t::CAN_SPEED_800KBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_800KBITS();
+                log_i("Canbus rate 800KBit");
+                break;
+            case can_speed_t::CAN_SPEED_1MBIT:
+                twai_timing_config = TWAI_TIMING_CONFIG_1MBITS();
+                log_i("Canbus rate 1MBit");
+                break;
             }
-            else
-            {
-                log_d("The object was not running");
-            }
+            log_d("The speed of the can bus has been changed");
             semaphore.give();
         }
-        return result;
     }
 
     int Can::set_filter(const uint8_t index, const uint32_t id, const uint32_t mask, const bool extended,

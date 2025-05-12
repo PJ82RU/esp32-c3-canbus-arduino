@@ -96,9 +96,8 @@ namespace hardware
         /**
          * Изменить скорость can-шины
          * @param speed Значение
-         * @return Результат выполнения
          */
-        bool set_timing(can_speed_t speed);
+        void set_timing(can_speed_t speed);
 
         /**
          * Записать фильтр

@@ -1,5 +1,3 @@
 .pio
 .idea
-include
-lib
-test
+main.*

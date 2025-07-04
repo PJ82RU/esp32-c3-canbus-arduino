@@ -80,7 +80,7 @@ namespace canbus
         log_i("TWAI driver stopped and uninstalled");
     }
 
-    bool Can::begin(pj_tools::Callback* callback)
+    bool Can::begin(esp32_c3_objects::Callback* callback)
     {
         if (callback == nullptr || !mSemaphore.take()) return false;
 

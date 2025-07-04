@@ -2,9 +2,9 @@
 #define HARDWARE_CAN_H
 
 #include "can_frame.h"
-#include "thread.h"
-#include "semaphore.h"
-#include "callback.h"
+#include "esp32_c3_objects/thread.h"
+#include "esp32_c3_objects/semaphore.h"
+#include "esp32_c3_objects/callback.h"
 #include "driver/twai.h"
 
 namespace canbus
@@ -71,7 +71,7 @@ namespace canbus
          * @param callback Функция обратного вызова
          * @return true если инициализация прошла успешно
          */
-        bool begin(pj_tools::Callback* callback);
+        bool begin(esp32_c3_objects::Callback* callback);
 
         /**
          * @brief Деинициализация CAN-интерфейса
@@ -192,13 +192,13 @@ namespace canbus
         void processFrame(const twai_message_t& message) const;
 
         /// Поток для мониторинга состояния
-        pj_tools::Thread mWatchdogThread;
+        esp32_c3_objects::Thread mWatchdogThread;
         /// Поток для приема сообщений
-        pj_tools::Thread mReceiveThread;
+        esp32_c3_objects::Thread mReceiveThread;
         /// Callback-механизм
-        pj_tools::Callback* mCallback = nullptr;
+        esp32_c3_objects::Callback* mCallback = nullptr;
         /// Семафор для синхронизации
-        pj_tools::Semaphore mSemaphore;
+        esp32_c3_objects::Semaphore mSemaphore;
 
         /// Текущая скорость
         CanSpeed mSpeed = CanSpeed::SPEED_125KBIT;

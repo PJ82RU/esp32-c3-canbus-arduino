@@ -24,17 +24,5 @@
   "dependencies": {
     "arduino-libraries/Arduino-ESP32": ">=2.0.0",
     "PJ82RU/esp32-c3-utils": ">=1.0.0"
-  },
-  "examples": [
-    {
-      "name": "Basic CAN Example",
-      "base": "examples/basic",
-      "files": ["src/main.cpp"]
-    },
-    {
-      "name": "Advanced CAN with Filters",
-      "base": "examples/advanced",
-      "files": ["src/main.cpp"]
-    }
-  ]
+  }
 }

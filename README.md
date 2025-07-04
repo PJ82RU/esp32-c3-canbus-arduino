@@ -22,7 +22,7 @@
 
 ```ini
 lib_deps =
-https : //github.com/PJ82RU/esp32-c3-canbus-arduino.git
+    https://github.com/PJ82RU/esp32-c3-canbus-arduino.git
 ```
 
 ### Arduino IDE

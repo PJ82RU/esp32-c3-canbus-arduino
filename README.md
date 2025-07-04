@@ -39,16 +39,16 @@ lib_deps =
 hardware::Can can(GPIO_NUM_5, GPIO_NUM_6);
 
 void setup() {
-can.begin(nullptr); // Инициализация без callback
-can.setSpeed(hardware::CanSpeed::SPEED_250KBIT);
+    can.begin(nullptr); // Инициализация без callback
+    can.setSpeed(hardware::CanSpeed::SPEED_250KBIT);
 }
 
 void loop() {
-hardware::CanFrame frame;
-frame.id = 0x123;
-frame.data.uint8[0] = 0xAA;
-frame.length = 1;
-
+    hardware::CanFrame frame;
+    frame.id = 0x123;
+    frame.data.uint8[0] = 0xAA;
+    frame.length = 1;
+    
     can.send(frame);
     delay(1000);
 }

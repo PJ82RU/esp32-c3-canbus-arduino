@@ -2,6 +2,7 @@
 
 ![Лицензия](https://img.shields.io/badge/license-Unlicense-blue.svg)
 ![PlatformIO](https://img.shields.io/badge/platform-ESP32--C3-green.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-orange)
 
 Библиотека для работы с CAN-шиной на ESP32-C3 через TWAI-контроллер.
 

@@ -1,0 +1,40 @@
+{
+  "name": "ESP32-C3 CANBus",
+  "version": "1.1.0",
+  "keywords": "esp32, c3, canbus, twai, can",
+  "description": "High-performance CAN Bus library for ESP32-C3 with advanced filtering and callback support",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PJ82RU/esp32-c3-canbus-arduino.git"
+  },
+  "authors": [
+    {
+      "name": "PJ82. Spiridonov Vladislav",
+      "email": "project82@mail.ru",
+      "maintainer": true
+    }
+  ],
+  "license": "Unlicense",
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "headers": [
+    "can_frame.h",
+    "can.h"
+  ],
+  "dependencies": {
+    "arduino-libraries/Arduino-ESP32": ">=2.0.0",
+    "PJ82RU/esp32-c3-utils": ">=1.0.0"
+  },
+  "examples": [
+    {
+      "name": "Basic CAN Example",
+      "base": "examples/basic",
+      "files": ["src/main.cpp"]
+    },
+    {
+      "name": "Advanced CAN with Filters",
+      "base": "examples/advanced",
+      "files": ["src/main.cpp"]
+    }
+  ]
+}

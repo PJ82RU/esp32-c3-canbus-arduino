@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-namespace hardware
+namespace canbus
 {
     /**
      * @brief Константы CAN-фрейма

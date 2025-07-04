@@ -7,7 +7,7 @@
 #include "callback.h"
 #include "driver/twai.h"
 
-namespace hardware
+namespace canbus
 {
     /**
      * @brief Константы CAN-интерфейса

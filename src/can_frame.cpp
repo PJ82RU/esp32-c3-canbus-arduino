@@ -1,8 +1,8 @@
-#include "can_frame.h"
+#include "canbus/can_frame.h"
 #include <cstring>
 #include <esp32-hal-log.h>
 
-namespace hardware
+namespace canbus
 {
     CanFrame::CanFrame()
     {

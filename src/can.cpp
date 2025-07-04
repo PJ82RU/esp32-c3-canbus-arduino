@@ -1,7 +1,7 @@
-#include "can.h"
+#include "canbus/can.h"
 #include <esp32-hal-log.h>
 
-namespace hardware
+namespace canbus
 {
     void canWatchdogTask(void* params)
     {
